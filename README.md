@@ -25,7 +25,6 @@ VITE_API_BASE_URL=https://apidev.vimedika.com
 
 - `docs/ui-reference/` untuk screenshot dan mapping UI lama
 - `docs/api-mapping/` untuk catatan halaman ke endpoint
-- `prompts/` untuk prompt Lovable / ChatGPT
 
 ## Menjalankan project
 
