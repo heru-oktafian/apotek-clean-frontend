@@ -279,8 +279,218 @@ Rekomendasi visual:
 
 ---
 
+## Bagian bawah dashboard
+
+Berdasarkan dua screenshot lanjutan, bagian bawah dashboard meneruskan komposisi panel yang sebelumnya sudah mulai terlihat di bagian atas, lalu diikuti tabel-tabel insight stok dan pergerakan produk.
+
+### 8. Rekap panel lanjutan di row menengah
+
+Pada potongan bawah pertama, terlihat kelanjutan row menengah yang berisi:
+
+- donut chart `Omset & Profit minggu ini`
+- card `Total profit hari ini`
+- panel kontribusi user/kasir
+
+Artinya, row menengah dashboard sebaiknya diperlakukan sebagai satu blok 3 kolom:
+
+1. `WeeklyCompositionChart`
+2. `DailyProfitSummaryCard`
+3. `CashierContributionCard`
+
+Untuk versi web baru:
+- tiga panel ini sebaiknya tetap berada dalam satu grid row di desktop
+- pada tablet/mobile boleh stack vertikal
+- tinggi card perlu diseimbangkan agar visual rapi
+
+### 9. Tabel Fast Moving
+
+Terlihat tabel dengan judul:
+- `Fast Moving`
+
+Kolom yang terlihat:
+- `Kode Barang`
+- `Nama Barang`
+- `Terjual`
+
+Makna bisnis:
+- daftar produk dengan penjualan/pergerakan tertinggi
+- berfungsi sebagai insight cepat untuk barang yang paling laku
+
+Karakter UI:
+- card/table putih dengan header hijau
+- tombol/ikon kecil download di pojok kanan atas section
+- menampilkan sekitar 10 item teratas
+
+Catatan implementasi web baru:
+- jadikan sebagai dashboard insight table, bukan halaman master data penuh
+- tampilkan maksimum top-N rows agar dashboard tetap ringan
+- sediakan tombol `Lihat Semua` opsional bila nanti ada halaman detail khusus
+- angka `terjual` harus rata kanan atau jelas terbaca
+
+Komponen yang dibutuhkan:
+- `FastMovingTableCard`
+- `InsightTableCard`
+- `DownloadSectionAction`
+
+### 10. Tabel Slow Moving
+
+Di samping Fast Moving terlihat tabel:
+- `Slow Moving`
+
+Kolom yang terlihat:
+- `Kode Barang`
+- `Nama Barang`
+- `Terjual`
+
+Makna bisnis:
+- daftar produk dengan pergerakan rendah atau tidak terjual
+- berguna untuk keputusan restock, stok mati, dan evaluasi inventaris
+
+Catatan implementasi web baru:
+- pola UI dibuat kembar dengan Fast Moving
+- bedakan hanya pada data source, judul, dan mungkin accent kecil
+- sebaiknya tetap dalam satu row desktop 2 kolom dengan Fast Moving
+
+Komponen yang dibutuhkan:
+- `SlowMovingTableCard`
+- atau generic `ProductMovementTableCard` dengan props mode `fast` / `slow`
+
+### 11. Tabel Near Expired
+
+Pada screenshot paling bawah terlihat section besar:
+- `Near Expired`
+
+Kolom yang terlihat:
+- `Kode Barang`
+- `Nama Barang`
+- `Stock`
+- `Unit`
+- `Tgl. Expired`
+
+Makna bisnis:
+- daftar barang yang mendekati masa kedaluwarsa
+- ini insight operasional yang sangat penting
+- kemungkinan dipakai untuk tindak lanjut pembelian, promo, retur, atau pengelolaan stok
+
+Karakter UI:
+- full-width table
+- header hijau konsisten
+- ikon download di pojok kanan atas
+- data lebih panjang daripada tabel Fast/Slow Moving
+
+Catatan implementasi web baru:
+- jadikan satu card/table penuh lebar konten
+- sediakan sorting visual atau default urut tanggal expired terdekat
+- format tanggal harus mudah dibaca
+- stock dan unit perlu diposisikan konsisten
+- kalau memungkinkan, beri indikator visual halus untuk barang yang sangat dekat expired
+
+Komponen yang dibutuhkan:
+- `NearExpiredTableCard`
+- `ExpiryDateCell`
+- `StockUnitCell`
+
+### 12. Struktur layout dashboard utuh yang direkomendasikan
+
+Dari seluruh screenshot yang sudah dikirim, susunan dashboard web baru yang paling masuk akal adalah:
+
+#### Row 1
+- line chart tren bulanan penuh lebar
+
+#### Row 2
+- KPI `Omset hari ini`
+- KPI `Profit hari ini`
+
+#### Row 3
+- donut chart mingguan
+- total profit harian
+- kontribusi user/kasir
+
+#### Row 4
+- Fast Moving table
+- Slow Moving table
+
+#### Row 5
+- Near Expired table full width
+
+### 13. Catatan interaksi dan aksi dashboard
+
+Dari screenshot tampak ada ikon download pada beberapa section tabel.
+
+Untuk web baru, tindakan yang disarankan:
+- setiap section insight boleh punya action kecil di kanan atas:
+  - export CSV/XLSX jika backend mendukung
+  - atau `Lihat detail` bila export belum tersedia
+- jangan memaksa semua tombol download aktif jika backend belum punya endpoint export spesifik
+- kalau backend belum punya export khusus dashboard insight, tombol dapat sementara diubah menjadi:
+  - `Lihat detail`
+  - `Buka laporan`
+
+### 14. Kandidat mapping data dashboard ke backend
+
+Walau screenshot dashboard lama kaya secara visual, frontend baru harus siap bahwa backend aktif mungkin belum menyediakan satu endpoint dashboard yang menampung semuanya sekaligus.
+
+Maka strategi frontend yang direkomendasikan:
+
+- buat `dashboard adapter layer`
+- izinkan satu halaman dashboard mengambil data dari beberapa sumber bila perlu
+- kelompokkan data menjadi:
+  - `trend data`
+  - `daily summary`
+  - `weekly composition`
+  - `cashier contribution`
+  - `fast moving items`
+  - `slow moving items`
+  - `near expired items`
+
+Prinsip tetap:
+- jangan mengarang endpoint baru
+- jangan mengubah backend hanya demi layout
+- frontend yang menyesuaikan melalui adapter
+
+### 15. State frontend tambahan yang perlu disiapkan
+
+Selain state dashboard bagian atas, tambahkan state berikut:
+
+- `fastMovingItems`
+- `slowMovingItems`
+- `nearExpiredItems`
+- `isLoadingFastMoving`
+- `isLoadingSlowMoving`
+- `isLoadingNearExpired`
+- `dashboardSectionErrors`
+
+Akan lebih baik bila error per section bisa terisolasi.
+Contoh:
+- chart gagal load, tapi tabel near expired tetap tampil
+- fast moving kosong, tapi KPI tetap tampil
+
+### 16. Catatan UX penting
+
+Dashboard ini secara alami panjang ke bawah, jadi untuk versi web baru:
+
+- tetap buat section hierarchy yang jelas
+- beri jarak antar card/section cukup lega
+- gunakan heading section yang kuat
+- gunakan sticky sidebar pada desktop
+- pertimbangkan sticky topbar ringan
+- jangan membuat tabel terlalu padat tanpa whitespace
+
+### 17. Status pemetaan dashboard
+
+Saat ini, dari screenshot yang sudah dikirim:
+
+- Bagian atas: sudah dipetakan
+- Bagian menengah: sudah dipetakan
+- Bagian bawah: sudah dipetakan
+
+Dengan ini dashboard lama sudah cukup terpetakan sebagai dasar untuk mulai implementasi UI web baru.
+
+---
+
 ## Status dokumen
 
 - Bagian atas: sudah dipetakan
-- Bagian tengah: menunggu screenshot berikutnya
-- Bagian bawah: menunggu screenshot berikutnya
+- Bagian tengah: sudah dipetakan
+- Bagian bawah: sudah dipetakan
+- Dashboard keseluruhan: cukup siap dijadikan acuan implementasi awal
