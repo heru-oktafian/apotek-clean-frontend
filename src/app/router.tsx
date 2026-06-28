@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { AppSidebar } from '../components/layout/app-sidebar'
 import { DashboardTopbar } from '../components/layout/dashboard-topbar'
+import { MobileBottomBar } from '../components/layout/mobile-bottom-bar'
 import { PagePlaceholder } from '../components/common/page-placeholder'
 import { GlobalErrorBoundary } from '../components/common/global-error-boundary'
 import { AuthProvider, useAuth } from '../features/auth/auth-context'
@@ -9,6 +10,8 @@ import { LoginPage } from '../features/auth/pages/login-page'
 import { BranchSelectionPage } from '../features/auth/pages/branch-selection-page'
 import { DashboardPage } from '../features/dashboard/pages/dashboard-page'
 import { ProfilePage } from '../features/shared/pages/profile-page'
+import { SalePosPage } from '../pages/SalePosPage'
+import { ReturPenjualanPage } from '../pages/ReturPenjualanPage'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -43,6 +46,7 @@ function DashboardLayout() {
         <main className="dashboard-shell__main" onClick={() => mobileSidebarOpen && setMobileSidebarOpen(false)}>
           <Outlet />
         </main>
+        <MobileBottomBar />
       </div>
     </div>
   )
@@ -73,6 +77,8 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/sale-pos" element={<SalePosPage />} />
+            <Route path="/retur-penjualan" element={<ReturPenjualanPage />} />
             <Route
               path="/master/member-categories"
               element={<PagePlaceholder title="Kategori Member" description="Halaman ini akan menjadi list berpaging dengan search mengikuti backend aktif." />}

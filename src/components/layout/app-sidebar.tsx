@@ -34,11 +34,32 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/auth-context';
-import { getMenus } from '../../features/menu/api/menu-api';
-import type { NavGroup, MenuRole } from '../../types/menu';
+import { useMenu } from '../../features/menu/hooks/useMenu';
+import type { NavGroup } from '../../types/menu';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// App Sidebar Component
+// ═══════════════════════════════════════════════════════════════════════════
+// Sidebar desktop dengan navigasi menu dari API
+//
+// Data Source:
+// - Menu diambil dari useMenu(activeToken) hook
+// - Data di-cache di sessionStorage (fetch hanya 1x per token)
+// - Tidak ada refetch saat sidebar mount/unmount
+//
+// Fitur:
+// - Group menu bisa di-expand/collapse
+// - Auto-expand grup yang active sesuai current route
+// - Icon per group & item dari icon map (GROUP_ICON_MAP, ITEM_ICON_MAP)
+// - Dashboard render sebagai standalone item (tidak dalam grup)
+//
+// Mobile:
+// - Sidebar bisa di-toggle via hamburger button
+// - Overlay + drawer effect
+// ═══════════════════════════════════════════════════════════════════════════
 
 // Icon per group_menu (key = lowercase group_menu)
-const GROUP_ICON_MAP: Record<string, LucideIcon> = {
+export const GROUP_ICON_MAP: Record<string, LucideIcon> = {
   dashboard:    LayoutDashboard,
   masters:      Boxes,
   transaksi:    ShoppingCart,
@@ -62,7 +83,7 @@ const GROUP_ORDER: Record<string, number> = {
 };
 
 // Icon per title item
-const ITEM_ICON_MAP: Record<string, LucideIcon> = {
+export const ITEM_ICON_MAP: Record<string, LucideIcon> = {
   dashboard:          LayoutDashboard,
   produk:             Package,
   kategori_produk:    Tags,
@@ -173,40 +194,11 @@ function deriveRoute(groupMenu: string, title: string): string {
   return `/${g}/${t.replace(/\s+/g, '-')}`;
 }
 
-function buildNavGroups(roles: MenuRole[]): NavGroup[] {
-  const groups: Record<string, NavGroup> = {};
-  for (const role of roles) {
-    for (const item of role.details) {
-      const { group_menu, title, url } = item;
-      const id = mapGroupToId(group_menu);
-      if (!groups[id]) groups[id] = { id, label: group_menu, icon: group_menu, items: [] };
-      groups[id].items.push({ label: title, to: deriveRoute(group_menu, title), icon: title, apiUrl: url });
-    }
-  }
-  return Object.values(groups).sort((a, b) => {
-    const orderA = GROUP_ORDER[a.id.toLowerCase()] ?? 99;
-    const orderB = GROUP_ORDER[b.id.toLowerCase()] ?? 99;
-    return orderA - orderB;
-  });
-}
-
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
-  const { logout, activeToken } = useAuth();
+  const { activeToken } = useAuth();
   const location = useLocation();
-
-  const [allGroups, setAllGroups] = useState<NavGroup[]>([]);
-  const [menuLoading, setMenuLoading] = useState(true);
-  const [menuError, setMenuError] = useState<string | null>(null);
+  const { navGroups: allGroups, loading: menuLoading, error: menuError } = useMenu(activeToken);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!activeToken) return;
-    setMenuLoading(true);
-    getMenus(activeToken)
-      .then((res) => setAllGroups(buildNavGroups(res.data)))
-      .catch((err) => setMenuError(err instanceof Error ? err.message : 'Gagal memuat menu'))
-      .finally(() => setMenuLoading(false));
-  }, [activeToken]);
 
   // Auto-expand group yang aktif saat allGroups loaded
   useEffect(() => {
@@ -239,10 +231,9 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
       <aside className={`app-sidebar${mobileOpen ? ' app-sidebar--mobile-open' : ''}`}>
         {/* Brand header */}
         <div className="app-sidebar__brand">
-          <div className="app-sidebar__brand-icon">A</div>
           <div className="app-sidebar__brand-text">
-            <span className="app-sidebar__brand-name">Ziida <span className="app-sidebar__version">v1.0</span></span>
-            <span className="app-sidebar__brand-sub">Apotek Clean</span>
+            <span className="app-sidebar__brand-name">Vimedika</span>
+            <span className="app-sidebar__brand-sub">Pharma P.O.S</span>
           </div>
           {/* Burger button — mobile only */}
           <button className="sidebar-burger" onClick={onClose} aria-label="Tutup menu">
@@ -262,7 +253,29 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
               {menuError}
             </div>
           )}
-          {!menuLoading && !menuError && allGroups.map((group) => {
+          {!menuLoading && !menuError && (
+            <>
+              {/* Render Dashboard as standalone (no group) if present */}
+              {allGroups.filter(g => g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard').map((dg) => (
+                dg.items.map((item) => {
+                  const itemKey = item.label.toLowerCase();
+                  const ItemIcon = ITEM_ICON_MAP[itemKey] ?? Settings;
+                  const isActive = location.pathname.startsWith(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={onClose}
+                      className={`sidebar-link${isActive ? ' active' : ''}`}
+                    >
+                      <ItemIcon size={16} strokeWidth={2.2} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })
+              ))}
+
+              {allGroups.filter(g => !(g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard')).map((group) => {
             const groupKey = group.id.toLowerCase();
             const GroupIcon = GROUP_ICON_MAP[groupKey] ?? Settings;
             const isExpanded = expandedGroups.has(group.id);
@@ -296,19 +309,11 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
               </section>
             );
           })}
+            </>
+          )}
         </nav>
 
-        {/* User profile — bottom */}
-        <div className="app-sidebar__user">
-          <button
-            className="app-sidebar__logout"
-            title="Logout"
-            onClick={() => { logout(); onClose(); }}
-          >
-            <LogOut size={16} />
-            <span>Keluar</span>
-          </button>
-        </div>
+        {/* User profile — bottom (logout removed) */}
       </aside>
     </>
   );

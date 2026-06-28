@@ -1,6 +1,23 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { BranchOption, ProfileData } from '../../types/api'
 import { authStorage } from '../../lib/auth/storage'
+import { clearMenuCache } from '../menu/hooks/useMenu'
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Auth Context & Session Management
+// ═══════════════════════════════════════════════════════════════════════════
+// Manage: token, branch, profile, logout
+//
+// Saat logout:
+// 1. Clear semua localStorage auth (token, branch, profile)
+// 2. Clear semua menu cache (sessionStorage + Promise cache)
+// 3. Reset state ke null → trigger redirect ke /login
+//
+// Alasan clear menu cache saat logout:
+// - Token baru akan berbeda
+// - Cache menu lama tidak relevan untuk user/branch baru
+// - Privacy: data menu user A tidak tersisa untuk user B
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface AuthContextValue {
   preBranchToken: string | null
@@ -46,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       logout: () => {
         authStorage.clear()
+        clearMenuCache()
         setPreBranchTokenState(null)
         setActiveTokenState(null)
         setActiveBranchState(null)

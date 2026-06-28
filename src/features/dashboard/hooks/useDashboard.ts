@@ -19,6 +19,30 @@ import {
   fetchSales,
 } from '../api/dashboard-api';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Dashboard Data Fetching Hook
+// ═══════════════════════════════════════════════════════════════════════════
+// Fetch 9 endpoint API secara paralel untuk dashboard:
+// 1. Daily profit (omset + profit hari ini)
+// 2. Weekly profit (profit minggu ini)
+// 3. Monthly profit (profit bulan ini)
+// 4. Monthly chart (data tren 30 hari)
+// 5. Near expired products
+// 6. Top selling products
+// 7. Least selling products
+// 8. Recent purchases (5 terakhir)
+// 9. Recent sales (5 terakhir)
+//
+// Error Handling:
+// - Gunakan Promise.allSettled (bukan Promise.all)
+// - Jika 1 endpoint error, yang lain tetap diproses
+// - Error hanya ditampilkan jika SEMUA endpoint gagal
+//
+// Refresh:
+// - User bisa trigger refetch manual dengan tombol Refresh
+// - Semua 9 endpoint di-fetch ulang bersamaan
+// ═══════════════════════════════════════════════════════════════════════════
+
 interface DashboardData {
   dailyProfit: DailyProfit | null;
   weeklyProfit: ProfitSummary | null;

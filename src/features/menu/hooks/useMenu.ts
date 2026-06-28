@@ -2,6 +2,63 @@ import { useState, useEffect } from 'react';
 import { getMenus } from '../api/menu-api';
 import type { NavGroup, MenuApiResponse } from '../../../types/menu';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Menu Caching Strategy
+// ═══════════════════════════════════════════════════════════════════════════
+// Tujuan: Fetch menu HANYA 1x per token, cache ke sessionStorage
+//
+// Flow:
+// 1. Component mount → cek cache di sessionStorage
+// 2. Jika ada → return cached data (instant)
+// 3. Jika tidak ada → fetch dari API + cache
+// 4. Promise cache untuk avoid race condition saat multiple mount
+// 5. Logout → clear cache untuk sesi bersih
+//
+// Keuntungan:
+// - Navigasi antar halaman TIDAK ada delay (cache hit)
+// - Memory efficient: hanya 1 Promise per token
+// - Auto-clear saat window ditutup (sessionStorage)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MENU_CACHE_KEY = 'apotek.menu-cache';
+const menuPromiseCache: Record<string, Promise<NavGroup[]>> = {};
+
+/** Membaca cache menu dari sessionStorage */
+function readMenuCache(): Record<string, NavGroup[]> {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || '{}') as Record<string, NavGroup[]>;
+  } catch {
+    return {};
+  }
+}
+
+/** Menulis cache menu ke sessionStorage */
+function writeMenuCache(cache: Record<string, NavGroup[]>) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(MENU_CACHE_KEY, JSON.stringify(cache));
+}
+
+/** Ambil menu cache untuk token tertentu */
+function getCachedMenu(token: string): NavGroup[] | undefined {
+  const cache = readMenuCache();
+  return cache[token];
+}
+
+/** Simpan menu cache untuk token tertentu */
+function setCachedMenu(token: string, navGroups: NavGroup[]) {
+  const cache = readMenuCache();
+  cache[token] = navGroups;
+  writeMenuCache(cache);
+}
+
+/** Hapus seluruh cache menu dan Promise cache (dipanggil saat logout) */
+export function clearMenuCache() {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(MENU_CACHE_KEY);
+  Object.keys(menuPromiseCache).forEach((key) => delete menuPromiseCache[key]);
+}
+
 function mapGroupToId(group: string): string {
   return group.toLowerCase().replace(/\s+/g, '_');
 }
@@ -109,31 +166,55 @@ export function useMenu(token: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setNavGroups([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const safeToken = token;
+    const cachedMenu = getCachedMenu(safeToken);
+    if (cachedMenu) {
+      setNavGroups(cachedMenu);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
     let cancelled = false;
 
-    async function fetchMenu() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getMenus(safeToken);
+    const promise = menuPromiseCache[safeToken] ?? (async () => {
+      const res = await getMenus(safeToken);
+      const groups = buildNavGroups(res);
+      setCachedMenu(safeToken, groups);
+      return groups;
+    })();
+
+    menuPromiseCache[safeToken] = promise;
+
+    setLoading(true);
+    setError(null);
+
+    promise
+      .then((groups) => {
         if (!cancelled) {
-          setNavGroups(buildNavGroups(res));
+          setNavGroups(groups);
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load menu');
         }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
 
-    fetchMenu();
     return () => { cancelled = true; };
-  }, [token as string]);
+  }, [token]);
 
   return { navGroups, loading, error };
 }
