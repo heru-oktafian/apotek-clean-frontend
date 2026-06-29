@@ -566,6 +566,156 @@ code {
   color: var(--text-muted);
 }
 
+.weekly-profit-card-container {
+  min-width: 280px;
+  display: flex;
+}
+
+.weekly-profit-card {
+  width: 100%;
+  min-height: 150px;
+  border-radius: 18px;
+  padding: 0.75rem;
+  background: var(--surface-card);
+  color: var(--text-h);
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+}
+
+.weekly-profit-card__header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.weekly-profit-card__label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-align: center;
+  width: 100%;
+}
+
+.weekly-profit-card__body {
+  display: grid;
+  grid-template-columns: minmax(180px, auto) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.weekly-profit-card__chart-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 0.75rem;
+  min-width: 190px;
+}
+
+.weekly-profit-card__icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #eef2ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.weekly-profit-card__chart-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 150px;
+  padding: 0.55rem;
+  overflow: visible;
+}
+
+.weekly-profit-card__info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: flex-start;
+  min-width: 0;
+  max-width: 220px;
+  justify-self: start;
+}
+
+
+.weekly-profit-card__info-list {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.weekly-profit-card__info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.6rem;
+  color: var(--text-h);
+}
+
+.weekly-profit-card__info-item span {
+  color: var(--text-muted);
+}
+
+.weekly-profit-card__info-item strong {
+  font-size: 0.68rem;
+}
+
+.weekly-profit-card__center-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-h);
+  pointer-events: none;
+}
+
+.weekly-profit-card__chart-wrapper svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.weekly-profit-card__chart-wrapper .recharts-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.weekly-profit-card__tooltip {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+}
+
+.weekly-profit-card__tooltip-name {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.25rem;
+}
+
+.weekly-profit-card__tooltip-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.recharts-surface {
+  cursor: pointer;
+}
+
 /* ── Chart Card ──────────────────────────────────────────── */
 .chart-card {
   background: var(--surface-card);
@@ -580,6 +730,58 @@ code {
   font-weight: 600;
   color: var(--text-h);
   margin: 0;
+}
+
+.weekly-profit-mini-card {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  min-height: 100px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+.weekly-profit-mini-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.weekly-profit-mini-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c084fc 0%, #8b5cf6 100%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.weekly-profit-mini-card__label {
+  color: #64748b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.weekly-profit-mini-card__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.weekly-profit-mini-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.weekly-profit-mini-card__chart {
+  width: 80px;
+  min-width: 80px;
+  height: 80px;
+}
+.weekly-profit-mini-card__chart svg {
+  overflow: visible;
 }
 
 /* ── Tables Grid ─────────────────────────────────────────── */

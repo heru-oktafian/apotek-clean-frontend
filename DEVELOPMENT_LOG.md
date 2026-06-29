@@ -105,6 +105,33 @@ Implementasi:
 
 ---
 
+### 7. Perbaikan Layout Card Dashboard "Omset & Profit Minggu Ini"
+**Tanggal**: Session Ini
+**File Utama**:
+- `src/features/dashboard/pages/dashboard-page.tsx`
+- `src/index.css`
+
+**Perubahan**:
+- Mengubah struktur grid pada `weekly-profit-card__body` agar area chart dan info tidak saling memotong
+- Memperbesar wrapper chart menjadi `150px` dan memastikan `ResponsiveContainer` punya dimensi pasti
+- Menambahkan style `svg` dan `.recharts-wrapper` untuk memastikan Recharts mengisi penuh container
+- Memperbaiki `weekly-profit-card__chart-wrapper` menjadi `display: flex` dan `overflow: visible`
+
+**Logika**:
+```
+Tujuan: Menghindari chart terpotong dan icon/info tidak menumpuk.
+- Chart wrapper harus punya ukuran tetap agar Recharts bisa generate SVG.
+- Grid harus membagi space dengan `minmax(180px, auto)` untuk chart dan `minmax(0,1fr)` untuk info.
+- `ResponsiveContainer` menggunakan dimensi angka agar render stabil.
+```
+
+**Dampak**:
+- Card dashboard tampil lebih rapih dan proporsional
+- Chart sekarang tergenerate normal dan tidak terpotong
+- Informasi `Omset`, `Profit`, `HPP` tetap jelas terbaca
+
+---
+
 ### 4. Mobile Header Responsif & Icon Buttons
 **Tanggal**: Session Ini  
 **File Utama**:

@@ -8,6 +8,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { useEffect, useState } from 'react'
 import { useDashboard } from '../hooks/useDashboard';
@@ -35,6 +38,99 @@ function StatCard({
         <span className="stat-card__label">{label}</span>
         <strong className="stat-card__value">{value}</strong>
         {sub && <span className="stat-card__sub">{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+function WeeklyProfitCard({ weeklyProfit }: { weeklyProfit: { profit?: number; omset?: number; total_hpp?: number } | null }) {
+  const profit = weeklyProfit?.profit ?? 0;
+  const omset = weeklyProfit?.omset ?? 0;
+  const hpp = weeklyProfit?.total_hpp ?? 0;
+  const innerTotal = profit + hpp;
+  const profitPct = innerTotal > 0 ? Math.round((profit / innerTotal) * 100) : 0;
+  const hppPct = innerTotal > 0 ? Math.round((hpp / innerTotal) * 100) : 0;
+  const safeOmset = omset > 0 ? omset : 1;
+  const safeProfit = profit > 0 ? profit : 1;
+  const safeHpp = hpp > 0 ? hpp : 1;
+
+  const outerData = [{ name: 'Omset', value: safeOmset }];
+  const innerData = [
+    { name: 'Profit', value: safeProfit },
+    { name: 'HPP', value: safeHpp },
+  ];
+
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+    if (!active || !payload || !payload.length) return null;
+    const item = payload[0];
+    const value = Number(item.value);
+    const pct = item.name === 'Omset' ? 100 : item.name === 'Profit' ? profitPct : hppPct;
+    return (
+      <div className="weekly-profit-card__tooltip">
+        <div className="weekly-profit-card__tooltip-name">{item.name}</div>
+        <div className="weekly-profit-card__tooltip-value">{formatNumber(value)} · {pct}%</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="weekly-profit-card">
+      <div className="weekly-profit-card__header">
+        <span className="weekly-profit-card__label">Omset & Profit Minggu Ini</span>
+      </div>
+      <div className="weekly-profit-card__body">
+        <div className="weekly-profit-card__chart-area">
+          <div className="weekly-profit-card__icon-box">
+            <Activity size={18} />
+          </div>
+          <div className="weekly-profit-card__chart-wrapper">
+            <ResponsiveContainer width={150} height={150}>
+              <PieChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Pie
+                  data={outerData}
+                  dataKey="value"
+                  innerRadius={44}
+                  outerRadius={56}
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke="none"
+                >
+                  <Cell fill="#4f46e5" />
+                </Pie>
+                <Pie
+                  data={innerData}
+                  dataKey="value"
+                  innerRadius={28}
+                  outerRadius={40}
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke="none"
+                >
+                  <Cell fill="#22c55e" />
+                  <Cell fill="#6366f1" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="weekly-profit-card__center-label">{profitPct}%</div>
+          </div>
+        </div>
+        <div className="weekly-profit-card__info-block">
+          <div className="weekly-profit-card__info-list">
+            <div className="weekly-profit-card__info-item">
+              <span>Omset</span>
+              <strong>{formatNumber(omset)}</strong>
+            </div>
+            <div className="weekly-profit-card__info-item">
+              <span>Profit</span>
+              <strong>{formatNumber(profit)}</strong>
+            </div>
+            <div className="weekly-profit-card__info-item">
+              <span>HPP</span>
+              <strong>{formatNumber(hpp)}</strong>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -109,13 +205,9 @@ export function DashboardPage() {
           sub={`Margin ${dailyProfit?.profit_percentage ?? 0}%`}
           color="#10b981"
         />
-        <StatCard
-          icon={Activity}
-          label="Profit Minggu Ini"
-          value={loading ? '—' : formatNumber(weeklyProfit?.profit ?? 0)}
-          sub={`${weeklyProfit?.qty_transactions ?? 0} transaksi`}
-          color="#8b5cf6"
-        />
+        <div className="weekly-profit-card-container">
+          <WeeklyProfitCard weeklyProfit={weeklyProfit} />
+        </div>
         <StatCard
           icon={BarChart2}
           label="Profit Bulan Ini"
