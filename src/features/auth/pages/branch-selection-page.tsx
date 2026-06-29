@@ -6,7 +6,7 @@ import type { BranchOption } from '../../../types/api'
 
 export function BranchSelectionPage() {
   const navigate = useNavigate()
-  const { preBranchToken, setActiveBranch, setActiveToken, setProfile, logout } = useAuth()
+  const { preBranchToken, setActiveBranch, setActiveToken, setPreBranchToken, setProfile, logout } = useAuth()
   const [branches, setBranches] = useState<BranchOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmittingId, setIsSubmittingId] = useState<string | null>(null)
@@ -41,9 +41,11 @@ export function BranchSelectionPage() {
       setError(null)
       setIsSubmittingId(branchId)
       const branchResponse = await setBranch(preBranchToken, branchId)
-      setActiveToken(branchResponse.data)
+      const finalToken = branchResponse.data
+      setActiveToken(finalToken)
       setActiveBranch(branch)
-      const profileResponse = await getProfile(branchResponse.data)
+      setPreBranchToken(null)
+      const profileResponse = await getProfile(finalToken)
       setProfile(profileResponse.data)
       navigate('/dashboard', { replace: true })
     } catch (caughtError) {

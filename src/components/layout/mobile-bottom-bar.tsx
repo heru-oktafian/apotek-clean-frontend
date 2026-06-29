@@ -74,6 +74,14 @@ export function MobileBottomBar() {
     setShowMore(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (location.pathname === '/dashboard' || location.pathname === '/') {
+      document.dispatchEvent(
+        new CustomEvent('mobile-bottom-bar-toggle', { detail: { showMore } }),
+      );
+    }
+  }, [showMore, location.pathname]);
+
   const isActive = (to: string) => {
     if (to === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
     return location.pathname.startsWith(to);
@@ -94,7 +102,7 @@ export function MobileBottomBar() {
         ))}
         <button
           className={`mobile-bottom-bar__tab${showMore ? ' active' : ''}`}
-          onClick={() => setShowMore((v) => !v)}
+          onClick={() => setShowMore((current) => !current)}
           type="button"
         >
           <ChevronUp size={20} className={showMore ? 'rotate-180' : ''} />

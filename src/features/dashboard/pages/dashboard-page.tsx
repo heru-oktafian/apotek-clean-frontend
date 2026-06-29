@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useEffect, useState } from 'react'
 import { useDashboard } from '../hooks/useDashboard';
 import { formatNumber } from '../../../lib/format-currency';
 
@@ -46,6 +47,7 @@ function fmtDate(dateStr: string) {
 }
 
 export function DashboardPage() {
+  const [hideRefreshFab, setHideRefreshFab] = useState(false)
 
   const {
     dailyProfit,
@@ -61,6 +63,18 @@ export function DashboardPage() {
     error,
     refresh,
   } = useDashboard();
+
+  useEffect(() => {
+    const handleToggle = (event: Event) => {
+      const customEvent = event as CustomEvent<{ showMore: boolean }>;
+      setHideRefreshFab(Boolean(customEvent.detail?.showMore));
+    };
+
+    document.addEventListener('mobile-bottom-bar-toggle', handleToggle);
+    return () => {
+      document.removeEventListener('mobile-bottom-bar-toggle', handleToggle);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -79,44 +93,6 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-shell__main">
-      {/* Content Header */}
-      <div className="content-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div>
-            <h1 className="page-header__title">Dashboard</h1>
-            <p className="page-header__subtitle">Ringkasan performa apotek</p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-h)' }}>Apotek Vimedika</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cabang Utama</div>
-          </div>
-          <div style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: '#22c55e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontSize: '0.875rem',
-            fontWeight: 700,
-            flexShrink: 0,
-          }}>A</div>
-          <button
-            className="btn btn--secondary"
-            onClick={refresh}
-            disabled={loading}
-            style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-          >
-            {loading ? 'Memuat...' : '↻ Refresh'}
-          </button>
-        </div>
-      </div>
-
-
       {/* Stat Cards */}
       <div className="stat-cards">
         <StatCard
@@ -195,6 +171,16 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      <button
+        type="button"
+        className={`dashboard-refresh-fab${hideRefreshFab ? ' dashboard-refresh-fab--hidden' : ''}`}
+        onClick={refresh}
+        disabled={loading}
+        aria-label={loading ? 'Memuat...' : 'Refresh dashboard'}
+      >
+        ↻
+      </button>
 
       {/* Tables Grid */}
       <div className="tables-grid">

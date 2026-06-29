@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth-context'
-import { apiRequest } from '../../../lib/api/client'
+import { getProfile } from '../api'
 import type { ProfileData } from '../../../types/api'
 
 /**
@@ -19,7 +19,7 @@ import type { ProfileData } from '../../../types/api'
  * - error: string | null - pesan error jika ada
  */
 export function useTokenValidation() {
-  const { activeToken, logout, setProfile } = useAuth()
+  const { activeToken, logout, profile, setProfile } = useAuth()
   const [isValid, setIsValid] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +31,12 @@ export function useTokenValidation() {
       return
     }
 
+    if (profile) {
+      setIsValid(true)
+      setIsLoading(false)
+      return
+    }
+
     let isMounted = true
 
     async function validateToken() {
@@ -38,14 +44,20 @@ export function useTokenValidation() {
         setIsLoading(true)
         setError(null)
 
-        // Validasi token dengan call ke profile endpoint
-        const profile = await apiRequest<ProfileData>('/api/profile', {
-          token: activeToken,
-        })
+        const token = activeToken
+        if (!token) {
+          throw new Error('No active token available')
+        }
+
+        const profileResponse = await getProfile(token)
+
+        if (!profileResponse || !profileResponse.data) {
+          throw new Error('Invalid profile response')
+        }
 
         if (isMounted) {
           // Token valid, simpan profile ke context
-          setProfile(profile)
+          setProfile(profileResponse.data)
           setIsValid(true)
           setIsLoading(false)
         }
@@ -70,7 +82,7 @@ export function useTokenValidation() {
     return () => {
       isMounted = false
     }
-  }, [activeToken, logout, setProfile])
+  }, [activeToken, logout, profile, setProfile])
 
   return { isValid, isLoading, error }
 }

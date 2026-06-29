@@ -464,21 +464,50 @@ code {
   min-height: 100vh;
   box-sizing: border-box;
   background: #fff;
+  position: relative;
 }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+
+.dashboard-refresh-fab {
+  position: fixed !important;
+  right: 1.5rem !important;
+  bottom: 4.5rem !important;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  background: #2563eb !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.16) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  z-index: 9999 !important;
 }
+
+.dashboard-refresh-fab--hidden {
+  display: none !important;
+}
+
+.dashboard-refresh-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px rgba(37, 99, 235, 0.22);
+}
+
+.dashboard-refresh-fab:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .page-header__title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-h);
   margin: 0;
 }
+
 .page-header__subtitle {
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -495,17 +524,18 @@ code {
 .stat-card {
   background: var(--surface-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-height: 110px;
 }
 .stat-card__icon {
-  width: 48px;
-  text-transform: capitalize;
-  letter-spacing: 0.02em;
-  color: rgba(255,255,255,0.95);
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
@@ -514,7 +544,7 @@ code {
 .stat-card__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 .stat-card__label {
@@ -524,14 +554,17 @@ code {
   letter-spacing: 0.05em;
 }
 .stat-card__value {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--text-h);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.stat-card__sub { font-size: 0.7rem; color: var(--text-muted); }
+.stat-card__sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
 
 /* ── Chart Card ──────────────────────────────────────────── */
 .chart-card {
