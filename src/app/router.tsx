@@ -6,6 +6,7 @@ import { MobileBottomBar } from '../components/layout/mobile-bottom-bar'
 import { PagePlaceholder } from '../components/common/page-placeholder'
 import { GlobalErrorBoundary } from '../components/common/global-error-boundary'
 import { AuthProvider, useAuth } from '../features/auth/auth-context'
+import { useTokenValidation } from '../features/auth/hooks/useTokenValidation'
 import { LoginPage } from '../features/auth/pages/login-page'
 import { BranchSelectionPage } from '../features/auth/pages/branch-selection-page'
 import { DashboardPage } from '../features/dashboard/pages/dashboard-page'
@@ -29,9 +30,26 @@ function AuthGate() {
 
 function ProtectedRoute() {
   const { activeToken } = useAuth()
+  const { isValid, isLoading } = useTokenValidation()
+
   if (!activeToken) {
     return <Navigate to="/login" replace />
   }
+
+  if (isLoading) {
+    // Validasi token sedang berlangsung, tampilkan loading atau placeholder
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <p>Validating session...</p>
+      </div>
+    )
+  }
+
+  if (!isValid) {
+    // Token expired atau invalid, akan di-redirect ke login oleh logout()
+    return <Navigate to="/login" replace />
+  }
+
   return <Outlet />
 }
 

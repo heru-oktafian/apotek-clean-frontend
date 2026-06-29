@@ -138,13 +138,68 @@ CSS Tricks:
 
 ---
 
+### 5. Token Validation Sebelum Render Protected Pages
+**Tanggal**: Session Ini  
+**File Utama**:
+- `src/features/auth/hooks/useTokenValidation.ts` (baru)
+- `src/app/router.tsx` (updated)
+- `src/features/auth/auth-context.tsx`
+
+**Perubahan**:
+- Membuat hook `useTokenValidation()` yang:
+  1. Validasi token dengan API call ke `/api/profile` saat komponen mount
+  2. Jika token valid, set `isValid = true` dan simpan profile ke context
+  3. Jika token expired/invalid (401, error), trigger `logout()` dan redirect ke login
+  4. Selama validasi pending, tampilkan loading state
+- Update `ProtectedRoute` di router untuk menggunakan hook ini
+- Cek token validation sebelum render child routes
+
+**Logika**:
+```
+Flow Validasi Token:
+1. User masuk ke protected route (/dashboard, /sale-pos, dll)
+2. ProtectedRoute check: ada activeToken?
+3. Jika ada, jalankan useTokenValidation hook
+4. Hook kirim GET /api/profile dengan Bearer token
+5. Jika respond 200 OK:
+   - Token valid ✓
+   - Parse profile data & update context
+   - Render protected page
+6. Jika respond 401 / error:
+   - Token expired / invalid ✗
+   - Call logout() untuk clear session
+   - Redirect ke /login
+7. Selama request pending: tampilkan "Validating session..."
+
+Security Benefits:
+- Mencegah render page dengan token invalid/expired
+- Jika token sudah kadaluarsa di server, user di-kick ke login
+- Profile data selalu fresh dari server
+- Logout bersih dari state + cache
+```
+
+**Dampak**:
+- Security: Token checked sebelum render, bukan after mounting
+- UX: User tidak akan melihat page lalu di-redirect (redirect happens di loading state)
+- Consistency: Profile di context always fresh dari server
+- Scalable: Hook bisa dipakai di berbagai route guards
+
+**Error Handling**:
+- Jika API unreachable (network error): catch error → logout → redirect login
+- Jika token 401: logout → redirect login
+- Jika profile incomplete: logout → redirect login
+
+---
+
 ## File Penting & Logika Komposisi
 
 ### Auth & Session Management
 | File | Fungsi | Catatan |
 |------|--------|---------|
 | `src/features/auth/auth-context.tsx` | Manage auth state & logout | Panggil `clearMenuCache()` saat logout |
+| `src/features/auth/hooks/useTokenValidation.ts` | Validasi token sebelum render | Hook yang check token ke `/api/profile` |
 | `src/lib/auth/storage.ts` | Persist auth ke localStorage | Token & branch disimpan di sini |
+| `src/app/router.tsx` | Route definitions & guards | ProtectedRoute check token validation |
 
 ### Menu & Navigation
 | File | Fungsi | Catatan |
@@ -209,9 +264,19 @@ GET /api/menus
 ### Auth Endpoints
 ```
 POST /api/login
+  → Login dengan username & password
+  → Return token
+
 GET /api/list_branches
+  → Fetch list cabang untuk user
+
 POST /api/set_branch
+  → Set cabang aktif & return token cabang
+
 GET /api/profile
+  → Fetch profile user dengan token saat ini
+  → Dipakai untuk validasi token di protected routes
+  → Jika token expired/invalid → return 401
 ```
 
 ---
@@ -253,9 +318,12 @@ GET /api/profile
 | Tombol mobile | Icon-only vs text | Icon-only lebih compact & clean |
 | Breakpoint mobile | 720px | Cukup untuk landscape mobile + small tablet |
 | Hook pattern | Single `useMenu()` vs duplikasi fetch | Single hook untuk DRY & consistency |
+| Token validation | Check di ProtectedRoute vs lazy check | ProtectedRoute better: block render early, no page flicker |
+| Token validation API | `/api/profile` vs custom endpoint | Profile endpoint: dual purpose (validate + get data) |
+| Loading state | "Validating session..." text | Simple & user-friendly, tidak bikin confusion |
 
 ---
 
-**Last Updated**: Session ini  
+**Last Updated**: 2026-06-29 - Token Validation Implementation  
 **Status**: In Progress  
 **Next Phase**: Mulai implementasi feature halaman individual (Products, Transactions, dll)
