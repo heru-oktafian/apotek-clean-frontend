@@ -191,6 +191,34 @@ Security Benefits:
 
 ---
 
+### 6. Proteksi Mobile FAB Dashboard
+**Tanggal**: Session Ini
+**File Utama**:
+- `src/features/dashboard/pages/dashboard-page.tsx`
+- `src/components/layout/mobile-bottom-bar.tsx`
+- `src/index.css`
+
+**Perubahan**:
+- Menambahkan listener `mobile-bottom-bar-toggle` di `DashboardPage`
+- Menyembunyikan floating refresh button di dashboard saat `Pharma P.O.S` menu terbuka
+- Menambahkan kelas CSS `dashboard-refresh-fab--hidden` dengan `display: none !important`
+- Menambahkan proteksi di `MobileBottomBar` agar event toggle hanya dikirim saat path dashboard aktif
+
+**Logika**:
+```
+Tujuan: Floating button hanya ada di dashboard, dan tidak mengganggu drawer menu mobile.
+- `MobileBottomBar` tetap kirim event toggle hanya saat halaman dashboard aktif
+- `DashboardPage` listen event ini dan sembunyikan FAB saat drawer terbuka
+- Jika pindah halaman lain, event tidak dikirim dan FAB tidak di-manage di halaman lain
+```
+
+**Dampak**:
+- UX mobile dashboard lebih bersih saat menu lengkap dibuka
+- Tidak ada side effect pada halaman lain karena event toggle scoped ke dashboard
+- Styling FAB tetap kuat karena menggunakan `!important` pada kelas hidden
+
+---
+
 ## File Penting & Logika Komposisi
 
 ### Auth & Session Management
