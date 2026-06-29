@@ -6,6 +6,7 @@ import type {
   NearExpiredProduct,
   ProductSummary,
   MonthlyChartItem,
+  ProfitTodayByUserData,
 } from '../types/dashboard';
 import {
   fetchDailyProfit,
@@ -15,6 +16,7 @@ import {
   fetchNearExpired,
   fetchTopSelling,
   fetchLeastSelling,
+  fetchProfitTodayByUser,
   fetchPurchases,
   fetchSales,
 } from '../api/dashboard-api';
@@ -47,6 +49,7 @@ interface DashboardData {
   dailyProfit: DailyProfit | null;
   weeklyProfit: ProfitSummary | null;
   monthlyProfit: any | null;
+  profitByUser: ProfitTodayByUserData | null;
   monthlyChart: MonthlyChartItem[];
   nearExpired: NearExpiredProduct[];
   topSelling: ProductSummary[];
@@ -67,6 +70,7 @@ export function useDashboard(): UseDashboardReturn {
     dailyProfit: null,
     weeklyProfit: null,
     monthlyProfit: null,
+    profitByUser: null,
     monthlyChart: [],
     nearExpired: [],
     topSelling: [],
@@ -87,6 +91,7 @@ export function useDashboard(): UseDashboardReturn {
         dailyProfit,
         weeklyProfit,
         monthlyProfit,
+        profitByUser,
         monthlyChart,
         nearExpired,
         topSelling,
@@ -97,6 +102,7 @@ export function useDashboard(): UseDashboardReturn {
         fetchDailyProfit(activeToken),
         fetchWeeklyProfit(activeToken),
         fetchMonthlyProfit(activeToken),
+        fetchProfitTodayByUser(activeToken),
         fetchMonthlyChart(activeToken),
         fetchNearExpired(activeToken),
         fetchTopSelling(activeToken),
@@ -109,6 +115,7 @@ export function useDashboard(): UseDashboardReturn {
         dailyProfit: dailyProfit ?? null,
         weeklyProfit: weeklyProfit ?? null,
         monthlyProfit: monthlyProfit ?? null,
+        profitByUser: profitByUser ?? null,
         monthlyChart: monthlyChart ?? [],
         nearExpired: nearExpired ?? [],
         topSelling: topSelling ?? [],

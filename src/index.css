@@ -531,6 +531,13 @@ code {
   gap: 1rem;
   min-height: 110px;
 }
+/* When a stat card uses the top-heading layout, center its contents */
+.stat-card--top-heading {
+  justify-content: center;
+}
+.stat-card--top-heading .stat-card__body {
+  width: 100%;
+}
 .stat-card__icon {
   width: 52px;
   height: 52px;
@@ -547,11 +554,37 @@ code {
   gap: 4px;
   min-width: 0;
 }
+.stat-card__body--centered {
+  align-items: center;
+  text-align: center;
+}
 .stat-card__label {
   font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+.stat-card__title-top {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.stat-card__top-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.stat-card__icon--centered {
+  margin: 0;
+}
+.stat-card__value--inline {
+  margin: 0;
+}
+.stat-card__value--large {
+  font-size: 2.025rem; /* 1.5 * 1.35rem */
 }
 .stat-card__value {
   font-size: 1.35rem;
@@ -564,6 +597,112 @@ code {
 .stat-card__sub {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.profit-by-user-card {
+  width: 100%;
+  min-height: 110px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.75rem;
+}
+.profit-by-user-card__header {
+  display: flex;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.profit-by-user-card__body {
+  display: grid;
+  gap: 0.75rem;
+}
+.profit-by-user-card__row {
+  display: grid;
+  gap: 0.35rem;
+}
+.profit-by-user-card__row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-h);
+}
+.profit-by-user-card__user {
+  font-weight: 600;
+}
+.profit-by-user-card__percentage {
+  font-size: 0.85rem;
+  color: var(--accent-dark);
+}
+.profit-by-user-card__bar-wrapper {
+  width: 100%;
+  min-height: 10px;
+  background: var(--bg-hover);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.profit-by-user-card__bar {
+  height: 10px;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+.profit-by-user-card__content {
+  display: grid;
+  grid-template-columns: 53% 45%;
+  gap: 1rem;
+  align-items: start;
+  padding-right: 2%;
+  box-sizing: border-box;
+}
+.profit-by-user-card__chart-area {
+  display: grid;
+  gap: 0.75rem;
+}
+.profit-by-user-card__info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.75rem;
+  min-width: 0;
+}
+.profit-by-user-card__info-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.profit-by-user-card__info-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-h);
+}
+.profit-by-user-card__info-item strong {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.profit-by-user-card__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.profit-by-user-card__footer span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .weekly-profit-card-container {
@@ -812,6 +951,17 @@ code {
 }
 .table-wrapper { overflow-x: auto; }
 
+/* Limit bottom dashboard cards to ~20 rows and enable vertical scroll */
+.tables-grid--3 .table-card {
+  display: flex;
+  flex-direction: column;
+}
+.tables-grid--3 .table-card .table-wrapper {
+  overflow-y: auto;
+  /* approx row height ~2rem -> 20 rows = 40rem; adjust if needed */
+  max-height: calc(2rem * 20);
+}
+
 /* ── Data Table ──────────────────────────────────────────── */
 .data-table {
   width: 100%;
@@ -832,6 +982,7 @@ code {
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+.data-table td:first-child { text-align: left; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .invoice-badge {
   background: var(--bg-hover);

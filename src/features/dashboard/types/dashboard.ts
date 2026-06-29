@@ -31,6 +31,20 @@ export interface MonthlyProfit {
   qty_transactions?: number;
 }
 
+export interface ProfitTodayByUserItem {
+  user_name: string;
+  percentage: number;
+  profit?: number;
+  transactions?: number;
+  abv?: number;
+}
+
+export interface ProfitTodayByUserData {
+  items: ProfitTodayByUserItem[];
+  total_trano?: number;
+  abv?: number;
+}
+
 // ── Monthly Chart Item ──────────────────────────────────────────────────────
 // Each item from /api/dashboard/monthly-profit-report → data array
 export interface MonthlyChartItem {

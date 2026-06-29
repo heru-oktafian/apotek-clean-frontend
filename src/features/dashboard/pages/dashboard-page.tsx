@@ -22,23 +22,48 @@ function StatCard({
   value,
   sub,
   color,
+  topHeading,
 }: {
   icon: React.ElementType;
   label: string;
   value: string | number;
   sub?: string;
   color: string;
+  topHeading?: boolean;
 }) {
+  const rawValue = value;
+  const needsRp = topHeading;
+  // if value already contains Rp prefix, don't add
+  const displayValue = (() => {
+    if (!needsRp) return rawValue;
+    if (typeof rawValue === 'string' && rawValue.trim().toLowerCase().startsWith('rp')) return rawValue;
+    return `Rp. ${rawValue}`;
+  })();
+
   return (
-    <div className="stat-card">
-      <div className="stat-card__icon" style={{ background: color }}>
-        <Icon size={20} />
+    <div className={`stat-card ${topHeading ? 'stat-card--top-heading' : ''}`}>
+      <div className={`stat-card__body ${topHeading ? 'stat-card__body--centered' : ''}`}>
+        <span className={`stat-card__label ${topHeading ? 'stat-card__title-top' : ''}`}>{label}</span>
+        {topHeading ? (
+          <div className="stat-card__top-heading-row">
+            <div className="stat-card__icon stat-card__icon--centered" style={{ background: color }}>
+              <Icon size={20} />
+            </div>
+            <strong className="stat-card__value stat-card__value--inline stat-card__value--large">{displayValue}</strong>
+          </div>
+        ) : (
+          <>
+            <strong className="stat-card__value">{rawValue}</strong>
+            {sub && <span className="stat-card__sub">{sub}</span>}
+          </>
+        )}
+        {topHeading && sub && <span className="stat-card__sub">{sub}</span>}
       </div>
-      <div className="stat-card__body">
-        <span className="stat-card__label">{label}</span>
-        <strong className="stat-card__value">{value}</strong>
-        {sub && <span className="stat-card__sub">{sub}</span>}
-      </div>
+      {!topHeading && (
+        <div className="stat-card__icon" style={{ background: color }}>
+          <Icon size={20} />
+        </div>
+      )}
     </div>
   );
 }
@@ -76,7 +101,7 @@ function WeeklyProfitCard({ weeklyProfit }: { weeklyProfit: { profit?: number; o
   return (
     <div className="weekly-profit-card">
       <div className="weekly-profit-card__header">
-        <span className="weekly-profit-card__label">Omset & Profit Minggu Ini</span>
+        <span className="stat-card__label">Omset & Profit Minggu Ini</span>
       </div>
       <div className="weekly-profit-card__body">
         <div className="weekly-profit-card__chart-area">
@@ -142,6 +167,75 @@ function fmtDate(dateStr: string) {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function ProfitByUserCard({
+  data,
+}: {
+  data: { items: { user_name: string; percentage: number; profit?: number; transactions?: number; abv?: number }[]; total_trano?: number; abv?: number } | null;
+}) {
+  if (!data || data.items.length === 0) {
+    return (
+      <div className="stat-card">
+        <div className="stat-card__body" style={{ width: '100%' }}>
+          <span className="stat-card__label">Profit Hari Ini per User</span>
+          <div style={{ padding: '1rem 0' }}>Belum ada data</div>
+        </div>
+      </div>
+    );
+  }
+
+  const derivedTotalTrano = data.items.reduce((sum, item) => sum + (item.transactions ?? 0), 0);
+  const derivedAbv = (() => {
+    const totalTrano = data.items.reduce((sum, item) => sum + (item.transactions ?? 0), 0);
+    if (totalTrano === 0) return undefined;
+    const weightedAbv = data.items.reduce(
+      (sum, item) => sum + (item.abv ?? 0) * (item.transactions ?? 0),
+      0
+    );
+    return Math.round(weightedAbv / totalTrano);
+  })();
+
+  const displayTrano =
+    typeof data.total_trano === 'number' && data.total_trano > 0 ? data.total_trano : derivedTotalTrano || undefined;
+  const displayAbv =
+    typeof data.abv === 'number' && data.abv > 0 ? data.abv : derivedAbv;
+
+  return (
+    <div className="profit-by-user-card">
+      <div className="profit-by-user-card__header">
+        <span className="stat-card__label">Profit Hari Ini per User</span>
+      </div>
+      <div className="profit-by-user-card__content">
+        <div className="profit-by-user-card__chart-area">
+          {data.items.slice(0, 4).map((item) => (
+            <div key={item.user_name} className="profit-by-user-card__row">
+              <div className="profit-by-user-card__row-main">
+                <span className="profit-by-user-card__user">{item.user_name}</span>
+                <span className="profit-by-user-card__percentage">{item.percentage}%</span>
+              </div>
+              <div className="profit-by-user-card__bar-wrapper">
+                <div
+                  className="profit-by-user-card__bar"
+                  style={{ width: `${Math.min(Math.max(item.percentage, 0), 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="profit-by-user-card__info-panel">
+          <div className="profit-by-user-card__info-item">
+            <span>Trano</span>
+            <strong>{displayTrano ?? '-'}</strong>
+          </div>
+          <div className="profit-by-user-card__info-item">
+            <span>ABV</span>
+            <strong>{displayAbv ? `Rp ${formatNumber(displayAbv)}` : '-'}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const [hideRefreshFab, setHideRefreshFab] = useState(false)
 
@@ -149,6 +243,7 @@ export function DashboardPage() {
     dailyProfit,
     weeklyProfit,
     monthlyProfit,
+    profitByUser,
     monthlyChart,
     nearExpired,
     topSelling,
@@ -195,32 +290,26 @@ export function DashboardPage() {
           icon={DollarSign}
           label="Omset Hari Ini"
           value={loading ? '—' : formatNumber(dailyProfit?.total_sales ?? 0)}
-          sub={`${dailyProfit?.qty_transactions ?? 0} transaksi`}
           color="#3b82f6"
+          topHeading
         />
         <StatCard
           icon={TrendingUp}
           label="Profit Hari Ini"
           value={loading ? '—' : formatNumber(dailyProfit?.profit_estimate ?? 0)}
-          sub={`Margin ${dailyProfit?.profit_percentage ?? 0}%`}
           color="#10b981"
+          topHeading
         />
         <div className="weekly-profit-card-container">
           <WeeklyProfitCard weeklyProfit={weeklyProfit} />
         </div>
-        <StatCard
-          icon={BarChart2}
-          label="Profit Bulan Ini"
-          value={loading ? '—' : formatNumber(monthlyProfit?.month_profit ?? 0)}
-          sub={`${monthlyProfit?.qty_transactions ?? 0} transaksi`}
-          color="#f59e0b"
-        />
+        <ProfitByUserCard data={profitByUser} />
       </div>
 
       {/* Chart */}
       {!loading && chartData.length > 0 && (
         <div className="chart-card">
-          <h2 className="chart-card__title">Tren Bulanan</h2>
+          <h2 className="chart-card__title stat-card__label">Tren Bulanan</h2>
           <div className="chart-card__body">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -273,75 +362,6 @@ export function DashboardPage() {
       >
         ↻
       </button>
-
-      {/* Tables Grid */}
-      <div className="tables-grid">
-        {/* Pembelian */}
-        <div className="table-card">
-          <h2 className="table-card__title">Pembelian Terbaru</h2>
-          {loading ? (
-            <div className="table-card__empty">Memuat...</div>
-          ) : purchases.length === 0 ? (
-            <div className="table-card__empty">Belum ada data</div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Invoice</th>
-                    <th>Supplier</th>
-                    <th>Total</th>
-                    <th>Tanggal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchases.map((p: any) => (
-                    <tr key={p.id}>
-                      <td><span className="invoice-badge">{p.invoice}</span></td>
-                      <td>{p.supplier_name || p.supplier || '—'}</td>
-                      <td>{formatNumber(p.total ?? 0)}</td>
-                      <td>{fmtDate(p.created_at ?? p.date)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Penjualan */}
-        <div className="table-card">
-          <h2 className="table-card__title">Penjualan Terbaru</h2>
-          {loading ? (
-            <div className="table-card__empty">Memuat...</div>
-          ) : sales.length === 0 ? (
-            <div className="table-card__empty">Belum ada data</div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Invoice</th>
-                    <th>Pelanggan</th>
-                    <th>Total</th>
-                    <th>Tanggal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sales.map((s: any) => (
-                    <tr key={s.id}>
-                      <td><span className="invoice-badge">{s.invoice}</span></td>
-                      <td>{s.customer_name || '—'}</td>
-                      <td>{formatNumber(s.total ?? 0)}</td>
-                      <td>{fmtDate(s.created_at ?? s.date)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Bottom 3 Cards */}
       <div className="tables-grid tables-grid--3">

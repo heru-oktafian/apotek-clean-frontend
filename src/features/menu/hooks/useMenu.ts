@@ -157,7 +157,70 @@ function buildNavGroups(data: MenuApiResponse): NavGroup[] {
     }
   }
 
-  return Object.values(groups);
+  // Remove any Settings group (id: 'setting' or 'settings' or label contains 'setting')
+  for (const id of Object.keys(groups)) {
+    const g = groups[id];
+    const lid = String(g.label || '').toLowerCase();
+    if (id === 'setting' || id === 'settings' || lid.includes('setting')) {
+      delete groups[id];
+      continue;
+    }
+
+    // Remove any `Profile` / `Profil` submenu entries from this group
+    g.items = g.items.filter((it) => {
+      const t = String(it.label).toLowerCase();
+      return t !== 'profile' && t !== 'profil';
+    });
+  }
+
+  // Desired order (lowercased ids):
+  const desiredOrder = [
+    'dashboard',
+    'transaksi',
+    'finance',
+    'laporan',
+    'master', // match master/masters
+    'membership',
+    'user_manage',
+  ];
+
+  const ordered: NavGroup[] = [];
+
+  const remaining = { ...groups };
+
+  // Helper to find and push by matching id patterns
+  function takeMatch(prefixes: string[] | string) {
+    const prefs = Array.isArray(prefixes) ? prefixes : [prefixes];
+    for (const id of Object.keys(remaining)) {
+      for (const p of prefs) {
+        if (id === p || id.startsWith(p)) {
+          ordered.push(remaining[id]);
+          delete remaining[id];
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Apply desired ordering with some flexible matching
+  for (const key of desiredOrder) {
+    if (key === 'master') {
+      // match both master and masters
+      takeMatch(['master', 'masters']);
+    } else if (key === 'user_manage') {
+      takeMatch(['user_manage', 'user manage', 'usermanage']);
+    } else {
+      takeMatch(key);
+    }
+  }
+
+  // Append any remaining groups in their original order
+  for (const id of Object.keys(remaining)) {
+    ordered.push(remaining[id]);
+  }
+
+  return ordered;
 }
 
 export function useMenu(token: string | null) {

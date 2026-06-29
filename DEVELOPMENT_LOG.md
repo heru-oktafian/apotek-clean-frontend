@@ -382,3 +382,89 @@ GET /api/profile
 **Last Updated**: 2026-06-29 - Token Validation Implementation  
 **Status**: In Progress  
 **Next Phase**: Mulai implementasi feature halaman individual (Products, Transactions, dll)
+
+---
+
+### 8. Dashboard — Table alignment & scroll limit
+**Tanggal**: 2026-06-29
+**File Utama**:
+- `src/index.css`
+- `src/features/dashboard/pages/dashboard-page.tsx`
+
+**Perubahan**:
+- Membuat kolom "Produk" pada tabel dashboard rata kiri dengan menambahkan:
+  - `.data-table td:first-child { text-align: left; }`
+- Membatasi tinggi ketiga kartu bawah dashboard (Fast Moving / Slow Moving / Near Expired) ke ~20 baris dan mengaktifkan scroll di dalamnya:
+  - `.tables-grid--3 .table-card { display:flex; flex-direction:column; }`
+  - `.tables-grid--3 .table-card .table-wrapper { overflow-y:auto; max-height: calc(2rem * 20); }`
+
+**Logika**:
+```
+Tujuan: Menjaga konsistensi visual dashboard dan mencegah kartu membesar tak terkendali saat data panjang.
+- Nama produk lebih mudah dibaca jika rata kiri.
+- Batas tinggi + scroll menjaga layout tetap konsisten di halaman utama.
+```
+
+**Dampak**:
+- Kolom "Produk" pada kartu Fast Moving / Slow Moving / Near Expired sekarang rata kiri.
+- Ketiga kartu memiliki tinggi maksimum yang konsisten; jika data lebih banyak akan muncul scrollbar vertikal di dalam card.
+
+**Verifikasi**:
+- Jalankan dev server: `npm run dev` lalu buka `/dashboard` untuk cek alignment dan scroll.
+
+**Notes**: Jika ukuran baris (`2rem`) terasa kurang presisi di beberapa device, nilai `max-height` dapat disesuaikan.
+
+---
+
+### 9. Menu — Reorder dan hapus submenu User dari Setting
+**Tanggal**: 2026-06-29
+**File Utama**:
+- `src/features/menu/hooks/useMenu.ts`
+
+**Perubahan**:
+- Mengurutkan grup menu yang ditampilkan oleh endpoint `/api/menus` sesuai urutan yang diminta:
+  1. Dashboard
+  2. Transaksi
+  3. Finance
+  4. Laporan
+  5. Master
+  6. Membership
+  7. User Manage
+- Menghapus grup `Setting` jika grup tersebut berisi submenu `User`/`Users`.
+
+**Logika**:
+```
+Setelah data menu dari API dikelompokkan, lakukan post-processing:
+- Jika ada grup `setting` yang memiliki item `user`/`users`, buang seluruh grup `setting`.
+- Susun ulang grup sesuai `desiredOrder` dengan matching fleksibel (mis. "master" dan "masters").
+- Sisakan grup lain yang tidak disebutkan tetap muncul setelah daftar utama.
+```
+
+**Dampak**:
+- Menu di sidebar akan tampil dalam urutan yang konsisten dan sesuai permintaan.
+- Grup Setting yang hanya berfungsi sebagai container untuk submenu User akan dihapus dari tampilan.
+
+**Verifikasi**:
+- Jalankan dev server dan buka sidebar untuk memastikan urutan dan penghapusan berlaku.
+
+---
+
+### 2026-06-30 — Dashboard: ProfitByUser card, parser, and styling
+**Files changed (high-level)**:
+- `src/features/dashboard/api/dashboard-api.ts` — parser for `/api/dashboard/profit-today-by-user`
+- `src/features/dashboard/pages/dashboard-page.tsx` — new `ProfitByUserCard`, stat card layout adjustments
+- `src/features/dashboard/hooks/useDashboard.ts` — hook wiring to fetch new endpoint
+- `src/index.css` — styles for profit card, stat cards, and global title sizing
+
+**Summary of changes**:
+- Implemented robust parser for `profit-today-by-user` to handle both top-level `qty_transactions`/`abv_transactions` and per-item fields. Computes fallback totals and weighted ABV when top-level not present.
+- Added `ProfitByUserCard` displaying per-user contribution with progress bars; left chart area and right info panel. Tuned layout to final 53% / 45% / 2% spacing.
+- Reduced info panel font size and formatted ABV as currency (`Rp.`) where available.
+- Reworked `StatCard` for `Omset Hari Ini` and `Profit Hari Ini` into top-heading style: title centered on top, icon + value centered and inline, value font increased (~1.5x) and prefixed with `Rp.`.
+- Unified header/title styling across cards using `stat-card__label` for consistent uppercase, muted coloring.
+- Fixed build-time TypeScript parse errors, improved localized number parsing, and restarted dev server to validate changes.
+
+**Notes / Next steps**:
+- Verified UI locally (Vite dev server). If CI or remote push requires credentials, ensure SSH or token is configured.
+- If further formatting needed (spacing / font sizes), adjust `src/index.css` entries under `.stat-card` and `.profit-by-user-card`.
+
