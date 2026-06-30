@@ -13,6 +13,7 @@ import { DashboardPage } from '../features/dashboard/pages/dashboard-page'
 import { ProfilePage } from '../features/shared/pages/profile-page'
 import { SalePosPage } from '../pages/SalePosPage'
 import { ReturPenjualanPage } from '../pages/ReturPenjualanPage'
+import { UnitsPage } from '../features/units/pages/units-page'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -103,7 +104,7 @@ export function AppRouter() {
             />
             <Route path="/master/members" element={<PagePlaceholder title="Member" description="Fondasi halaman member akan memakai server-side pagination dan search dari backend." />} />
             <Route path="/master/product-categories" element={<PagePlaceholder title="Kategori Produk" description="Halaman kategori produk akan mengikuti pola master data backend yang sudah ada." />} />
-            <Route path="/master/units" element={<PagePlaceholder title="Satuan" description="Halaman satuan akan dibuat dengan tabel berpaging dan modal form bertahap." />} />
+            <Route path="/master/satuan" element={<UnitsPage />} />
             <Route path="/master/unit-conversions" element={<PagePlaceholder title="Konversi Satuan" description="Halaman konversi satuan akan memakai combo produk dan list berpaging dari backend aktif." />} />
             <Route path="/master/supplier-categories" element={<PagePlaceholder title="Kategori Supplier" description="Halaman kategori supplier akan mengikuti kontrak pagination master data aktif." />} />
             <Route path="/master/suppliers" element={<PagePlaceholder title="Supplier" description="Halaman supplier akan memakai search dan pagination server-side." />} />

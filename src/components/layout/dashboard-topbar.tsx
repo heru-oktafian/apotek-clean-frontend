@@ -34,7 +34,7 @@ const pageTitles: Record<string, string> = {
   '/master/members': 'Member',
   '/master/product-categories': 'Kategori Produk',
   '/master/products': 'Produk',
-  '/master/units': 'Satuan',
+  '/master/satuan': 'Satuan',
   '/master/unit-conversions': 'Konversi Satuan',
   '/master/supplier-categories': 'Kategori Supplier',
   '/master/suppliers': 'Supplier',

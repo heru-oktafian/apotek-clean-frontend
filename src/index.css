@@ -1899,3 +1899,345 @@ code {
   .login-brand { display: none; }
   .login-form-panel { width: 100%; max-width: 100%; }
 }
+
+/* ── Master Satuan / Units Page ─────────────────────────── */
+.units-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem;
+  background: var(--bg);
+  min-height: 100%;
+}
+
+.units-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.units-page__search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.units-page__search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.units-page__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: var(--text-h);
+  background: var(--bg);
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.units-page__search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.units-page__search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.units-page__search-btn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.units-page__search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.units-page__refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.units-page__refresh-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.units-page__refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Toolbar (Tambah, Download) ─────────────────────────── */
+.units-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.units-page__btn-tambah {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.units-page__btn-tambah:hover {
+  opacity: 0.9;
+}
+
+.units-page__download-group {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.units-page__btn-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.units-page__btn-download:hover {
+  background: var(--border);
+  border-color: var(--text-muted);
+}
+
+.units-page__btn-download--excel {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #22c55e;
+}
+
+.units-page__btn-download--excel:hover {
+  background: #dcfce7;
+}
+
+.units-page__btn-download--pdf {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.units-page__btn-download--pdf:hover {
+  background: #fee2e2;
+}
+
+/* ── Table Wrapper ──────────────────────────────────────── */
+.units-page__table-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  border-radius: 12px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+  background: var(--surface-card);
+}
+
+.units-page__table-wrapper > .overflow-x-auto {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.units-page__table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.units-page__table-wrapper th,
+.units-page__table-wrapper td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.units-page__table-wrapper th {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: left;
+  letter-spacing: 0.02em;
+}
+
+.units-page__table-wrapper td {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.units-page__table-wrapper tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.units-page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Pagination ────────────────────────────────────────── */
+.units-page__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.7rem 0;
+  margin-top: -0.15rem;
+  background: var(--surface-card);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.units-page__pagination-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.units-page__pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.units-page__pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.units-page__pagination-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.units-page__pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.units-page__pagination-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* ── Responsive: Units Page ────────────────────────────── */
+@media (max-width: 768px) {
+  .units-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .units-page__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .units-page__btn-tambah {
+    width: 100%;
+  }
+
+  .units-page__download-group {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .units-page__btn-download {
+    flex: 1;
+  }
+
+  .units-page__pagination {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .units-page__pagination-controls {
+    justify-content: center;
+  }
+}

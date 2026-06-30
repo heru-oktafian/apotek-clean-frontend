@@ -75,7 +75,7 @@ function deriveRoute(groupMenu: string, title: string): string {
     if (t === 'supplier') return '/master/suppliers';
     if (t.includes('supplier') && t.includes('kategori')) return '/master/supplier-categories';
     if (t === 'pelanggan') return '/master/customers';
-    if (t === 'satuan') return '/master/units';
+    if (t === 'satuan') return '/master/satuan';
     if (t === 'konversi satuan') return '/master/unit-conversions';
     if (t.includes('member') && t.includes('kategori')) return '/master/member-categories';
     if (t === 'member') return '/master/members';
