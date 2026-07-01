@@ -7,6 +7,24 @@ Aplikasi React + TypeScript + Vite untuk POS Apotek dengan fokus pada UI respons
 
 ## Perubahan Teknis (Kronologi)
 
+### 0. Penyesuaian UI Master Kategori Berdasarkan Response Endpoint
+**Tanggal**: 2026-07-01
+**File Utama**:
+- `src/pages/CategoriesPage.tsx`
+- `src/pages/SuppliersPage.tsx`
+- `src/pages/MemberCategoriesPage.tsx`
+
+**Perubahan**:
+- Menyesuaikan kolom tabel dan form modal dengan struktur response endpoint untuk kategori produk, supplier, dan member.
+- Menampilkan field yang relevan dari response endpoint: nama kategori, rate poin member, dan branch ID (jika ada) sesuai kebutuhan UI.
+- Menyembunyikan kolom dan field `branch_id` dari tampilan tabel dan modal karena nilainya tidak bisa diubah oleh user.
+
+**Dampak**:
+- UI lebih konsisten dengan data yang diterima dari backend.
+- User hanya melihat field yang relevan dan dapat diolah.
+
+---
+
 ### 1. Header Breadcrumb & Responsivitas
 **Tanggal**: Session Ini  
 **File Utama**:
@@ -215,6 +233,40 @@ Security Benefits:
 - Jika API unreachable (network error): catch error → logout → redirect login
 - Jika token 401: logout → redirect login
 - Jika profile incomplete: logout → redirect login
+
+---
+
+### 6. Standarisasi Template Halaman List Master & Transaksional
+**Tanggal**: Session Ini  
+**File Utama**:
+- `src/features/units/pages/units-page.tsx`
+- `src/index.css`
+
+**Perubahan**:
+- Menetapkan layout halaman Master Satuan sebagai template tampilan standar untuk daftar master dan halaman transaksional.
+- Struktur UI konsisten dimulai dari:
+  - search box dengan input dan tombol Cari
+  - tombol Refresh
+  - toolbar aksi utama (Tambah)
+  - tombol download Excel / PDF
+  - tabel data dengan aksi baris Edit / Hapus
+  - pagination di bawah tabel
+- Menyederhanakan jarak dan ukuran elemen sehingga tampilan list lebih compact dan mudah dipindah-pakai.
+
+**Logika**:
+```
+Standarisasi Tampilan List:
+1. Search + refresh di atas sebagai filter cepat
+2. Action toolbar di tengah sebagai entry point utama
+3. Tabel data menempel tepat di bawah toolbar
+4. Pagination berada di bawah tabel dengan jarak minimal
+5. Modal edit/hapus menjaga konsistensi dialog
+```
+
+**Dampak**:
+- Halaman daftar lain dapat digembangkan dengan pola UI yang sama
+- UX jadi lebih konsisten saat berpindah antar halaman master/transaksi
+- Implementasi UI baru akan lebih cepat karena sudah ada template standar
 
 ---
 

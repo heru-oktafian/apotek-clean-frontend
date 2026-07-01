@@ -21,20 +21,25 @@ import type { NavGroup, MenuApiResponse } from '../../../types/menu';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MENU_CACHE_KEY = 'apotek.menu-cache';
+const MENU_CACHE_VERSION = 2;
 const menuPromiseCache: Record<string, Promise<NavGroup[]>> = {};
 
+type MenuCacheEntry = { version: number; navGroups: NavGroup[] };
+
 /** Membaca cache menu dari sessionStorage */
-function readMenuCache(): Record<string, NavGroup[]> {
+function readMenuCache(): Record<string, MenuCacheEntry> {
   if (typeof window === 'undefined') return {};
   try {
-    return JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || '{}') as Record<string, NavGroup[]>;
+    const raw = JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || '{}');
+    if (typeof raw !== 'object' || raw === null) return {};
+    return raw as Record<string, MenuCacheEntry>;
   } catch {
     return {};
   }
 }
 
 /** Menulis cache menu ke sessionStorage */
-function writeMenuCache(cache: Record<string, NavGroup[]>) {
+function writeMenuCache(cache: Record<string, MenuCacheEntry>) {
   if (typeof window === 'undefined') return;
   sessionStorage.setItem(MENU_CACHE_KEY, JSON.stringify(cache));
 }
@@ -42,13 +47,16 @@ function writeMenuCache(cache: Record<string, NavGroup[]>) {
 /** Ambil menu cache untuk token tertentu */
 function getCachedMenu(token: string): NavGroup[] | undefined {
   const cache = readMenuCache();
-  return cache[token];
+  const entry = cache[token];
+  if (!entry) return undefined;
+  if (entry.version !== MENU_CACHE_VERSION) return undefined;
+  return entry.navGroups;
 }
 
 /** Simpan menu cache untuk token tertentu */
 function setCachedMenu(token: string, navGroups: NavGroup[]) {
   const cache = readMenuCache();
-  cache[token] = navGroups;
+  cache[token] = { version: MENU_CACHE_VERSION, navGroups };
   writeMenuCache(cache);
 }
 
@@ -69,7 +77,7 @@ function deriveRoute(groupMenu: string, title: string): string {
 
   if (g === 'dashboard') return '/dashboard';
 
-  if (g === 'masters') {
+  if (g === 'masters' || g === 'master') {
     if (t.includes('produk') && t.includes('kategori')) return '/master/product-categories';
     if (t === 'produk') return '/master/products';
     if (t === 'supplier') return '/master/suppliers';

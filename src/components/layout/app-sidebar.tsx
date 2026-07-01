@@ -140,7 +140,7 @@ function deriveRoute(groupMenu: string, title: string): string {
   const g = groupMenu.toLowerCase();
   const t = title.toLowerCase();
   if (g === 'dashboard') return '/dashboard';
-  if (g === 'masters') {
+  if (g === 'masters' || g === 'master') {
     if (t.includes('produk') && t.includes('kategori')) return '/master/product-categories';
     if (t === 'produk') return '/master/products';
     if (t === 'supplier') return '/master/suppliers';

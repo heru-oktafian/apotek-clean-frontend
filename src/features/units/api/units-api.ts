@@ -24,3 +24,20 @@ export const fetchUnits = async (token: string, params?: UnitsListParams) => {
   const res = await apiRequest<UnitsResponse>(url, { token });
   return res;
 };
+
+export const createUnit = async (token: string, body: { name: string }) => {
+  const url = '/api/units';
+  const res = await apiRequest<Unit>(url, { token, method: 'POST', body });
+  return res;
+};
+
+export const updateUnit = async (token: string, id: string | number, body: { name: string }) => {
+  const url = `/api/units/${id}`;
+  const res = await apiRequest<Unit>(url, { token, method: 'PUT', body });
+  return res;
+};
+
+export const deleteUnit = async (token: string, id: string | number) => {
+  const url = `/api/units/${id}`;
+  return apiRequest<void>(url, { token, method: 'DELETE' });
+};

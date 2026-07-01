@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import { Edit2, Trash2, RefreshCw, Download, Search, Plus } from 'lucide-react';
 import { useAuth } from '../features/auth/auth-context';
 import { Button, Input, Modal, useToast } from '../components/ui';
@@ -6,33 +6,39 @@ import { Table, type TableColumn } from '../components/ui/Table';
 import { apiRequest } from '../lib/api/client';
 import { buildApiUrl } from '../lib/api/env';
 
-interface Category {
+interface MemberCategory {
   id: number;
   nama: string;
+  pointsConversionRate: number | string;
+  branchId: string;
 }
 
-export function CategoriesPage() {
+export function MemberCategoriesPage() {
   const { activeToken } = useAuth();
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categoryName, setCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<MemberCategory | null>(null);
+  const [nama, setNama] = useState('');
+  const [pointsConversionRate, setPointsConversionRate] = useState('');
+  const [branchId, setBranchId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<MemberCategory[]>([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(7);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const normalizeCategory = useCallback((item: any): Category => ({
-    id: item?.product_category_id ?? item?.productCategoryId ?? item?.id ?? item?.category_id ?? item?.categoryId ?? 0,
-    nama: item?.product_category_name ?? item?.productCategoryName ?? item?.name ?? item?.nama ?? '',
+  const normalizeMemberCategory = useCallback((item: any): MemberCategory => ({
+    id: item?.id ?? item?.Id ?? item?.member_category_id ?? item?.memberCategoryId ?? 0,
+    nama: item?.nama ?? item?.name ?? item?.member_category_name ?? '',
+    pointsConversionRate: item?.points_conversion_rate ?? item?.pointsConversionRate ?? 0,
+    branchId: item?.branch_id ?? item?.branchId ?? '',
   }), []);
 
-  const loadCategories = useCallback(
+  const loadMemberCategories = useCallback(
     async (requestedPage = 1, search = '') => {
       if (!activeToken) {
         setCategories([]);
@@ -48,7 +54,7 @@ export function CategoriesPage() {
 
       try {
         const queryParams = new URLSearchParams({ page: String(requestedPage), search: search.trim() });
-        const response = await apiRequest<any>(`/api/product-categories?${queryParams.toString()}`, { token: activeToken });
+        const response = await apiRequest<any>(`/api/member-categories?${queryParams.toString()}`, { token: activeToken });
         const payload = response as any;
         const rawData = Array.isArray(payload?.data)
           ? payload.data
@@ -62,7 +68,7 @@ export function CategoriesPage() {
           ? payload
           : [];
 
-        const nextItems = rawData.map(normalizeCategory);
+        const nextItems = rawData.map(normalizeMemberCategory);
         const totalItems = payload?.total_items ?? payload?.pagination?.total ?? payload?.total ?? payload?.meta?.total ?? payload?.data?.total ?? nextItems.length;
         const currentPage = payload?.current_page ?? payload?.pagination?.page ?? payload?.page ?? payload?.meta?.current_page ?? requestedPage;
         const nextPerPage = payload?.per_page ?? payload?.pagination?.per_page ?? payload?.meta?.per_page ?? 7;
@@ -75,17 +81,17 @@ export function CategoriesPage() {
         console.error(error);
         setCategories([]);
         setTotal(0);
-        setApiError(error instanceof Error ? error.message : 'Gagal memuat data kategori produk.');
+        setApiError(error instanceof Error ? error.message : 'Gagal memuat data kategori member.');
       } finally {
         setIsLoading(false);
       }
     },
-    [activeToken, normalizeCategory],
+    [activeToken, normalizeMemberCategory],
   );
 
   useEffect(() => {
-    void loadCategories(page, activeSearch);
-  }, [activeSearch, loadCategories, page]);
+    void loadMemberCategories(page, activeSearch);
+  }, [activeSearch, loadMemberCategories, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
@@ -101,14 +107,18 @@ export function CategoriesPage() {
 
   const openAddCategory = () => {
     setEditingCategory(null);
-    setCategoryName('');
+    setNama('');
+    setPointsConversionRate('');
+    setBranchId('');
     setErrors({});
     setModalOpen(true);
   };
 
-  const openEditCategory = (category: Category) => {
+  const openEditCategory = (category: MemberCategory) => {
     setEditingCategory(category);
-    setCategoryName(category.nama);
+    setNama(category.nama);
+    setPointsConversionRate(String(category.pointsConversionRate));
+    setBranchId(category.branchId);
     setErrors({});
     setModalOpen(true);
   };
@@ -119,7 +129,7 @@ export function CategoriesPage() {
 
   const validateCategory = () => {
     const e: Record<string, string> = {};
-    if (!categoryName.trim()) e.nama = 'Wajib diisi.';
+    if (!nama.trim()) e.nama = 'Wajib diisi.';
     return e;
   };
 
@@ -135,30 +145,32 @@ export function CategoriesPage() {
       setCategories((prev) =>
         prev.map((item) =>
           item.id === editingCategory.id
-            ? { ...item, nama: categoryName }
+            ? { ...item, nama, pointsConversionRate, branchId }
             : item,
         ),
       );
-      toast.addToast('Kategori produk berhasil diperbarui.', 'success');
+      toast.addToast('Kategori member berhasil diperbarui.', 'success');
     } else {
       const nextId = Math.max(0, ...categories.map((item) => item.id)) + 1;
       setCategories((prev) => [
-        { id: nextId, nama: categoryName },
+        { id: nextId, nama, pointsConversionRate, branchId },
         ...prev,
       ]);
-      toast.addToast('Kategori produk berhasil ditambahkan.', 'success');
+      toast.addToast('Kategori member berhasil ditambahkan.', 'success');
     }
 
     setModalOpen(false);
     setEditingCategory(null);
-    setCategoryName('');
+    setNama('');
+    setPointsConversionRate('');
+    setBranchId('');
     setErrors({});
   };
 
-  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MemberCategory | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  const openDeleteConfirm = (category: Category) => {
+  const openDeleteConfirm = (category: MemberCategory) => {
     setDeleteTarget(category);
     setIsDeleteConfirmOpen(true);
   };
@@ -171,7 +183,7 @@ export function CategoriesPage() {
   const handleConfirmDeleteCategory = () => {
     if (!deleteTarget) return;
     setCategories((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-    toast.addToast('Kategori produk berhasil dihapus.', 'success');
+    toast.addToast('Kategori member berhasil dihapus.', 'success');
     closeDeleteConfirm();
   };
 
@@ -179,8 +191,8 @@ export function CategoriesPage() {
     setPage(1);
     setActiveSearch('');
     setSearchQuery('');
-    void loadCategories(1, '');
-    toast.addToast('Data kategori disegarkan.', 'success');
+    void loadMemberCategories(1, '');
+    toast.addToast('Data kategori member disegarkan.', 'success');
   };
 
   const downloadFile = async (path: string, defaultName: string) => {
@@ -223,16 +235,17 @@ export function CategoriesPage() {
   };
 
   const handleDownloadExcel = async () => {
-    await downloadFile('/api/categories/excel', 'categories.xlsx');
+    await downloadFile('/api/member-categories/excel', 'member-categories.xlsx');
   };
 
   const handleDownloadPDF = async () => {
-    await downloadFile('/api/categories/pdf', 'categories.pdf');
+    await downloadFile('/api/member-categories/pdf', 'member-categories.pdf');
   };
 
-  const columns: TableColumn<Category>[] = [
+  const columns: TableColumn<MemberCategory>[] = [
     { key: 'id', header: 'ID' },
     { key: 'nama', header: 'Nama Kategori' },
+    { key: 'pointsConversionRate', header: 'Rate Poin' },
     {
       key: 'actions',
       header: 'Aksi',
@@ -265,22 +278,18 @@ export function CategoriesPage() {
         <div className="units-page__search-group">
           <form className="units-page__search-form" onSubmit={handleSearchSubmit}>
             <Input
-              placeholder="Cari kategori..."
+              placeholder="Cari kategori member..."
               className="units-page__search-input"
               value={searchQuery}
               onChange={handleSearchInput}
-              aria-label="Cari kategori"
+              aria-label="Cari kategori member"
             />
             <button className="units-page__search-btn" type="submit">
               <Search size={14} />
               Cari
             </button>
           </form>
-          <button
-            className="units-page__refresh-btn"
-            onClick={handleRefresh}
-            title="Refresh"
-          >
+          <button className="units-page__refresh-btn" onClick={handleRefresh} title="Refresh">
             <RefreshCw size={16} />
           </button>
         </div>
@@ -314,22 +323,31 @@ export function CategoriesPage() {
         {apiError ? (
           <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{apiError}</div>
         ) : null}
-        <Table columns={columns} data={categories} emptyText={isLoading ? 'Memuat data...' : 'Tidak ada kategori produk'} />
+        <Table columns={columns} data={categories} emptyText={isLoading ? 'Memuat data...' : 'Tidak ada kategori member'} />
       </div>
 
-      <Modal open={modalOpen} onClose={closeCategoryModal} title={editingCategory ? 'Ubah Kategori Produk' : 'Tambah Kategori Produk'} size="sm">
+      <Modal open={modalOpen} onClose={closeCategoryModal} title={editingCategory ? 'Ubah Kategori Member' : 'Tambah Kategori Member'} size="sm">
         <form onSubmit={handleCategorySubmit} className="space-y-4">
           <div>
             <Input
               placeholder="Nama kategori"
-              value={categoryName}
+              value={nama}
               onChange={(e) => {
-                setCategoryName(e.target.value);
+                setNama(e.target.value);
                 setErrors((prev) => ({ ...prev, nama: '' }));
               }}
-              aria-label="Nama kategori"
+              aria-label="Nama kategori member"
             />
             {errors.nama && <p className="text-sm text-red-600 mt-1">{errors.nama}</p>}
+          </div>
+          <div>
+            <Input
+              type="number"
+              placeholder="Rate poin"
+              value={pointsConversionRate}
+              onChange={(e) => setPointsConversionRate(e.target.value)}
+              aria-label="Rate poin member"
+            />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={closeCategoryModal}>Batal</Button>
@@ -344,7 +362,7 @@ export function CategoriesPage() {
         </form>
       </Modal>
 
-      <Modal open={isDeleteConfirmOpen} onClose={closeDeleteConfirm} title="Hapus Kategori Produk" size="sm">
+      <Modal open={isDeleteConfirmOpen} onClose={closeDeleteConfirm} title="Hapus Kategori Member" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-slate-700">
             Yakin ingin menghapus kategori <strong>{deleteTarget?.nama}</strong>?

@@ -7,6 +7,7 @@ import { PagePlaceholder } from '../components/common/page-placeholder'
 import { GlobalErrorBoundary } from '../components/common/global-error-boundary'
 import { AuthProvider, useAuth } from '../features/auth/auth-context'
 import { useTokenValidation } from '../features/auth/hooks/useTokenValidation'
+import { ToastProvider } from '../components/ui/Toast'
 import { LoginPage } from '../features/auth/pages/login-page'
 import { BranchSelectionPage } from '../features/auth/pages/branch-selection-page'
 import { DashboardPage } from '../features/dashboard/pages/dashboard-page'
@@ -14,6 +15,9 @@ import { ProfilePage } from '../features/shared/pages/profile-page'
 import { SalePosPage } from '../pages/SalePosPage'
 import { ReturPenjualanPage } from '../pages/ReturPenjualanPage'
 import { UnitsPage } from '../features/units/pages/units-page'
+import { CategoriesPage } from '../pages/CategoriesPage'
+import { MemberCategoriesPage } from '../pages/MemberCategoriesPage'
+import { SuppliersPage } from '../pages/SuppliersPage'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -83,8 +87,9 @@ export function AppRouter() {
   return (
     <GlobalErrorBoundary>
       <AuthProvider>
-        <BrowserRouter>
-        <Routes>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
         <Route path="/" element={<RootRedirect />} />
 
         <Route element={<AuthGate />}>
@@ -98,15 +103,12 @@ export function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/sale-pos" element={<SalePosPage />} />
             <Route path="/retur-penjualan" element={<ReturPenjualanPage />} />
-            <Route
-              path="/master/member-categories"
-              element={<PagePlaceholder title="Kategori Member" description="Halaman ini akan menjadi list berpaging dengan search mengikuti backend aktif." />}
-            />
+            <Route path="/master/member-categories" element={<MemberCategoriesPage />} />
             <Route path="/master/members" element={<PagePlaceholder title="Member" description="Fondasi halaman member akan memakai server-side pagination dan search dari backend." />} />
-            <Route path="/master/product-categories" element={<PagePlaceholder title="Kategori Produk" description="Halaman kategori produk akan mengikuti pola master data backend yang sudah ada." />} />
+            <Route path="/master/product-categories" element={<CategoriesPage />} />
             <Route path="/master/satuan" element={<UnitsPage />} />
             <Route path="/master/unit-conversions" element={<PagePlaceholder title="Konversi Satuan" description="Halaman konversi satuan akan memakai combo produk dan list berpaging dari backend aktif." />} />
-            <Route path="/master/supplier-categories" element={<PagePlaceholder title="Kategori Supplier" description="Halaman kategori supplier akan mengikuti kontrak pagination master data aktif." />} />
+            <Route path="/master/supplier-categories" element={<SuppliersPage />} />
             <Route path="/master/suppliers" element={<PagePlaceholder title="Supplier" description="Halaman supplier akan memakai search dan pagination server-side." />} />
             <Route path="/master/products" element={<PagePlaceholder title="Produk" description="Halaman produk akan menjadi salah satu prioritas utama karena sudah punya list, detail, export, dan label." />} />
             <Route path="/transactions/purchases" element={<PagePlaceholder title="Pembelian" description="Halaman pembelian akan fokus dulu pada list, filter bulan, detail, dan export." />} />
@@ -122,9 +124,10 @@ export function AppRouter() {
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
-      </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </AuthProvider>
     </GlobalErrorBoundary>
   )
 }
