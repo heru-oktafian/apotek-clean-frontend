@@ -199,6 +199,29 @@ CSS Tricks:
 - Update `ProtectedRoute` di router untuk menggunakan hook ini
 - Cek token validation sebelum render child routes
 
+---
+
+### 8. Perbaikan Tombol Tambah Kategori & CRUD Endpoint
+**Tanggal**: 2026-07-02
+**File Utama**:
+- `src/pages/CategoriesPage.tsx`
+- `src/pages/MemberCategoriesPage.tsx`
+- `src/pages/SuppliersPage.tsx`
+
+**Perubahan**:
+- Menambahkan `type="button"` pada tombol toolbar (`Tambah +`, `Refresh`, `Download Excel`, `Download PDF`) untuk mencegah aksi form submit tidak sengaja.
+- Mengimplementasikan pemanggilan API backend untuk operasi CRUD kategori:
+  - `POST` untuk menambahkan kategori baru
+  - `PUT` untuk mengubah kategori
+  - `DELETE` untuk menghapus kategori
+- Memastikan setelah operasi berhasil, daftar kategori direfresh ulang dari endpoint.
+
+**Dampak**:
+- Tombol `Tambah +` hanya dieksekusi sekali ketika diklik.
+- Update/hapus/penambahan kategori kini dikirim ke backend, bukan hanya ke state lokal.
+- UI menjadi lebih konsisten dengan alur data backend.
+
+
 **Logika**:
 ```
 Flow Validasi Token:

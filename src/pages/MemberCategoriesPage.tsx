@@ -133,7 +133,9 @@ export function MemberCategoriesPage() {
     return e;
   };
 
-  const handleCategorySubmit = (e: React.FormEvent) => {
+  
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateCategory();
     if (Object.keys(validation).length) {
@@ -141,30 +143,49 @@ export function MemberCategoriesPage() {
       return;
     }
 
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((item) =>
-          item.id === editingCategory.id
-            ? { ...item, nama, pointsConversionRate, branchId }
-            : item,
-        ),
-      );
-      toast.addToast('Kategori member berhasil diperbarui.', 'success');
-    } else {
-      const nextId = Math.max(0, ...categories.map((item) => item.id)) + 1;
-      setCategories((prev) => [
-        { id: nextId, nama, pointsConversionRate, branchId },
-        ...prev,
-      ]);
-      toast.addToast('Kategori member berhasil ditambahkan.', 'success');
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
     }
 
-    setModalOpen(false);
-    setEditingCategory(null);
-    setNama('');
-    setPointsConversionRate('');
-    setBranchId('');
-    setErrors({});
+    try {
+      const body = {
+        name: nama,
+        nama,
+        points_conversion_rate: Number(pointsConversionRate) || 0,
+        pointsConversionRate: Number(pointsConversionRate) || 0,
+        branch_id: branchId,
+        branchId,
+      };
+
+      if (editingCategory) {
+        await apiRequest<any>(`/api/member-categories/${editingCategory.id}`, {
+          method: 'PUT',
+          token: activeToken,
+          body,
+        });
+        toast.addToast('Kategori member berhasil diperbarui.', 'success');
+      } else {
+        await apiRequest<any>(`/api/member-categories`, {
+          method: 'POST',
+          token: activeToken,
+          body,
+        });
+        toast.addToast('Kategori member berhasil ditambahkan.', 'success');
+      }
+
+      setModalOpen(false);
+      setEditingCategory(null);
+      setNama('');
+      setPointsConversionRate('');
+      setBranchId('');
+      setErrors({});
+
+      void loadMemberCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan kategori member.', 'error');
+    }
   };
 
   const [deleteTarget, setDeleteTarget] = useState<MemberCategory | null>(null);
@@ -180,11 +201,28 @@ export function MemberCategoriesPage() {
     setIsDeleteConfirmOpen(false);
   };
 
-  const handleConfirmDeleteCategory = () => {
+  
+
+  const handleConfirmDeleteCategory = async () => {
     if (!deleteTarget) return;
-    setCategories((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-    toast.addToast('Kategori member berhasil dihapus.', 'success');
-    closeDeleteConfirm();
+
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
+    }
+
+    try {
+      await apiRequest<any>(`/api/member-categories/${deleteTarget.id}`, {
+        method: 'DELETE',
+        token: activeToken,
+      });
+      toast.addToast('Kategori member berhasil dihapus.', 'success');
+      closeDeleteConfirm();
+      void loadMemberCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menghapus kategori member.', 'error');
+    }
   };
 
   const handleRefresh = () => {
@@ -289,18 +327,24 @@ export function MemberCategoriesPage() {
               Cari
             </button>
           </form>
-          <button className="units-page__refresh-btn" onClick={handleRefresh} title="Refresh">
+          <button
+            type="button"
+            className="units-page__refresh-btn"
+            onClick={handleRefresh}
+            title="Refresh"
+          >
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
 
       <div className="units-page__toolbar">
-        <button className="units-page__btn-tambah" onClick={openAddCategory}>
+        <button type="button" className="units-page__btn-tambah" onClick={openAddCategory}>
           <Plus size={14} /> Tambah +
         </button>
         <div className="units-page__download-group">
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--excel"
             onClick={handleDownloadExcel}
             title="Download Excel"
@@ -309,6 +353,7 @@ export function MemberCategoriesPage() {
             Excel
           </button>
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--pdf"
             onClick={handleDownloadPDF}
             title="Download PDF"

@@ -123,7 +123,7 @@ export function CategoriesPage() {
     return e;
   };
 
-  const handleCategorySubmit = (e: React.FormEvent) => {
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateCategory();
     if (Object.keys(validation).length) {
@@ -131,28 +131,38 @@ export function CategoriesPage() {
       return;
     }
 
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((item) =>
-          item.id === editingCategory.id
-            ? { ...item, nama: categoryName }
-            : item,
-        ),
-      );
-      toast.addToast('Kategori produk berhasil diperbarui.', 'success');
-    } else {
-      const nextId = Math.max(0, ...categories.map((item) => item.id)) + 1;
-      setCategories((prev) => [
-        { id: nextId, nama: categoryName },
-        ...prev,
-      ]);
-      toast.addToast('Kategori produk berhasil ditambahkan.', 'success');
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
     }
 
-    setModalOpen(false);
-    setEditingCategory(null);
-    setCategoryName('');
-    setErrors({});
+    try {
+      if (editingCategory) {
+        await apiRequest<any>(`/api/product-categories/${editingCategory.id}`, {
+          method: 'PUT',
+          token: activeToken,
+          body: { name: categoryName, nama: categoryName, product_category_name: categoryName },
+        });
+        toast.addToast('Kategori produk berhasil diperbarui.', 'success');
+      } else {
+        await apiRequest<any>(`/api/product-categories`, {
+          method: 'POST',
+          token: activeToken,
+          body: { name: categoryName, nama: categoryName, product_category_name: categoryName },
+        });
+        toast.addToast('Kategori produk berhasil ditambahkan.', 'success');
+      }
+
+      setModalOpen(false);
+      setEditingCategory(null);
+      setCategoryName('');
+      setErrors({});
+
+      void loadCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan kategori.', 'error');
+    }
   };
 
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
@@ -168,11 +178,26 @@ export function CategoriesPage() {
     setIsDeleteConfirmOpen(false);
   };
 
-  const handleConfirmDeleteCategory = () => {
+  const handleConfirmDeleteCategory = async () => {
     if (!deleteTarget) return;
-    setCategories((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-    toast.addToast('Kategori produk berhasil dihapus.', 'success');
-    closeDeleteConfirm();
+
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
+    }
+
+    try {
+      await apiRequest<any>(`/api/product-categories/${deleteTarget.id}`, {
+        method: 'DELETE',
+        token: activeToken,
+      });
+      toast.addToast('Kategori produk berhasil dihapus.', 'success');
+      closeDeleteConfirm();
+      void loadCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menghapus kategori.', 'error');
+    }
   };
 
   const handleRefresh = () => {
@@ -277,6 +302,7 @@ export function CategoriesPage() {
             </button>
           </form>
           <button
+            type="button"
             className="units-page__refresh-btn"
             onClick={handleRefresh}
             title="Refresh"
@@ -287,11 +313,12 @@ export function CategoriesPage() {
       </div>
 
       <div className="units-page__toolbar">
-        <button className="units-page__btn-tambah" onClick={openAddCategory}>
+        <button type="button" className="units-page__btn-tambah" onClick={openAddCategory}>
           <Plus size={14} /> Tambah +
         </button>
         <div className="units-page__download-group">
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--excel"
             onClick={handleDownloadExcel}
             title="Download Excel"
@@ -300,6 +327,7 @@ export function CategoriesPage() {
             Excel
           </button>
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--pdf"
             onClick={handleDownloadPDF}
             title="Download PDF"

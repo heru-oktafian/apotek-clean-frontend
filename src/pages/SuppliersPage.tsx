@@ -128,7 +128,9 @@ export function SuppliersPage() {
     return e;
   };
 
-  const handleCategorySubmit = (e: React.FormEvent) => {
+  
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateCategory();
     if (Object.keys(validation).length) {
@@ -136,29 +138,41 @@ export function SuppliersPage() {
       return;
     }
 
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((item) =>
-          item.id === editingCategory.id
-            ? { ...item, nama, branchId }
-            : item,
-        ),
-      );
-      toast.addToast('Kategori supplier berhasil diperbarui.', 'success');
-    } else {
-      const nextId = Math.max(0, ...categories.map((item) => item.id)) + 1;
-      setCategories((prev) => [
-        { id: nextId, nama, branchId },
-        ...prev,
-      ]);
-      toast.addToast('Kategori supplier berhasil ditambahkan.', 'success');
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
     }
 
-    setModalOpen(false);
-    setEditingCategory(null);
-    setNama('');
-    setBranchId('');
-    setErrors({});
+    try {
+      const body = { name: nama, nama, branch_id: branchId, branchId };
+
+      if (editingCategory) {
+        await apiRequest<any>(`/api/supplier-categories/${editingCategory.id}`, {
+          method: 'PUT',
+          token: activeToken,
+          body,
+        });
+        toast.addToast('Kategori supplier berhasil diperbarui.', 'success');
+      } else {
+        await apiRequest<any>(`/api/supplier-categories`, {
+          method: 'POST',
+          token: activeToken,
+          body,
+        });
+        toast.addToast('Kategori supplier berhasil ditambahkan.', 'success');
+      }
+
+      setModalOpen(false);
+      setEditingCategory(null);
+      setNama('');
+      setBranchId('');
+      setErrors({});
+
+      void loadSupplierCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan kategori supplier.', 'error');
+    }
   };
 
   const [deleteTarget, setDeleteTarget] = useState<SupplierCategory | null>(null);
@@ -174,11 +188,28 @@ export function SuppliersPage() {
     setIsDeleteConfirmOpen(false);
   };
 
-  const handleConfirmDeleteCategory = () => {
+  
+
+  const handleConfirmDeleteCategory = async () => {
     if (!deleteTarget) return;
-    setCategories((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-    toast.addToast('Kategori supplier berhasil dihapus.', 'success');
-    closeDeleteConfirm();
+
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
+    }
+
+    try {
+      await apiRequest<any>(`/api/supplier-categories/${deleteTarget.id}`, {
+        method: 'DELETE',
+        token: activeToken,
+      });
+      toast.addToast('Kategori supplier berhasil dihapus.', 'success');
+      closeDeleteConfirm();
+      void loadSupplierCategories(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menghapus kategori supplier.', 'error');
+    }
   };
 
   const handleRefresh = () => {
@@ -282,18 +313,24 @@ export function SuppliersPage() {
               Cari
             </button>
           </form>
-          <button className="units-page__refresh-btn" onClick={handleRefresh} title="Refresh">
+          <button
+            type="button"
+            className="units-page__refresh-btn"
+            onClick={handleRefresh}
+            title="Refresh"
+          >
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
 
       <div className="units-page__toolbar">
-        <button className="units-page__btn-tambah" onClick={openAddCategory}>
+        <button type="button" className="units-page__btn-tambah" onClick={openAddCategory}>
           <Plus size={14} /> Tambah +
         </button>
         <div className="units-page__download-group">
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--excel"
             onClick={handleDownloadExcel}
             title="Download Excel"
@@ -302,6 +339,7 @@ export function SuppliersPage() {
             Excel
           </button>
           <button
+            type="button"
             className="units-page__btn-download units-page__btn-download--pdf"
             onClick={handleDownloadPDF}
             title="Download PDF"
