@@ -15,11 +15,14 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 z-40" onClick={onClose} />
 
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 overflow-hidden ${
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 overflow-visible z-50 ${
           size === 'sm' ? 'max-w-sm' : size === 'md' ? 'max-w-md' : size === 'lg' ? 'max-w-lg' : 'max-w-2xl'
         }`}
       >

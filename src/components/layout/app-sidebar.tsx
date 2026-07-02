@@ -258,7 +258,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
               {/* Render Dashboard as standalone (no group) if present */}
               {allGroups.filter(g => g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard').map((dg) => (
                 dg.items.map((item) => {
-                  const itemKey = item.label.toLowerCase();
+                  const itemKey = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                   const ItemIcon = ITEM_ICON_MAP[itemKey] ?? Settings;
                   const isActive = location.pathname.startsWith(item.to);
                   return (
@@ -291,7 +291,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
                   <span className="sidebar-group__chevron">{isExpanded ? '▲' : '▼'}</span>
                 </button>
                 {isExpanded && group.items.map((item) => {
-                  const itemKey = item.label.toLowerCase();
+                  const itemKey = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                   const ItemIcon = ITEM_ICON_MAP[itemKey] ?? Settings;
                   const isActive = location.pathname.startsWith(item.to);
                   return (

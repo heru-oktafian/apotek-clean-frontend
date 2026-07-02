@@ -126,7 +126,7 @@ export function MobileBottomBar() {
                     {dash && (
                       <div className="mobile-bottom-bar__dashboard-single" key="dashboard-single">
                         {dash.items.map((item, idx) => {
-                          const key = (item.label || '').toLowerCase();
+                          const key = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                           const Icon = (ITEM_ICON_MAP as any)[key] ?? Settings;
                           return (
                             <Link key={`dash-${idx}`} to={item.to} className={`mobile-bottom-bar__item${isActive(item.to) ? ' active' : ''}`} onClick={() => setShowMore(false)}>
@@ -147,7 +147,7 @@ export function MobileBottomBar() {
                             <p className="mobile-bottom-bar__group-label">{group.label}</p>
                           </div>
                           {group.items.map((item, idx) => {
-                            const key = (item.label || '').toLowerCase();
+                            const key = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                             const Icon = (ITEM_ICON_MAP as any)[key] ?? Settings;
                             return (
                               <Link

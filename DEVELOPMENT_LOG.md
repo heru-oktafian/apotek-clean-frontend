@@ -321,6 +321,42 @@ Tujuan: Floating button hanya ada di dashboard, dan tidak mengganggu drawer menu
 
 ---
 
+### 9. Perbaikan Fitur Master → Konversi Satuan (Unit Conversions)
+**Tanggal**: 2026-07-03
+**File Utama**:
+- `src/features/unit-conversions/pages/unit-conversions-page.tsx`
+- `src/features/unit-conversions/hooks/useUnitConversions.ts`
+- `src/features/unit-conversions/api/unit-conversions-api.ts`
+- `src/components/ui/Modal.tsx`
+- `src/components/layout/app-sidebar.tsx`
+- `src/components/layout/mobile-bottom-bar.tsx`
+
+**Perubahan & Perbaikan**:
+- Normalisasi respons combo produk dan satuan agar tolerant terhadap berbagai shape dari backend (`array`, `{data:[]}`, `{items:[]}`, nested `product`/`unit` objects).
+- Perbaikan parsing dan normalisasi ID/label untuk produk dan satuan; filter entry tanpa nama agar option combobox tidak kosong.
+- Ubah handling select di form: simpan nilai sebagai `string`, gunakan placeholder `""`, dan kirim payload sesuai spesifikasi backend: `product_id`, `init_id`, `final_id`, `value_conv`.
+- Modal diperbaiki (`overflow-visible`, z-index) dan pointer events dihentikan pada container agar native select dropdown dapat dipilih tanpa menutup modal.
+- Normalisasi data pada `useUnitConversions` sehingga tabel selalu menerima field yang konsisten (`product_id`, `product_name`, `from_unit_id`, `from_unit_name`, `to_unit_id`, `to_unit_name`, `conversion_value`).
+- Normalisasi item saat membuka edit modal: resolve id/name dari berbagai field yang mungkin dikembalikan backend sehingga combobox edit menampilkan nilai yang benar.
+- Normalisasi mapping menu label untuk konsistensi ikon di sidebar dan mobile bottom bar.
+- Menambahkan debug logging (console.debug / console.warn) sementara untuk membantu verifikasi response; debug dihapus/dinonaktifkan di UI setelah verifikasi.
+
+**Dampak**:
+- Form Tambah / Edit konversi sekarang menampilkan combo dan selection bekerja.
+- Payload yang dikirim sesuai contoh API backend (menggunakan `init_id` / `final_id` dengan ID string seperti `UNT...`).
+- Tabel menampilkan nama produk dan nama satuan jika data tersedia dari respon backend; jika masih ada row kosong, kemungkinan shape respons berbeda dan akan ditangani setelah melihat contoh raw payload row.
+
+**Catatan Pengujian**:
+- Jalankan dev server (`npm run dev`), navigasi ke `Master → Konversi Satuan`.
+- Buka modal Tambah untuk memastikan combobox memuat dan dapat memilih opsi; klik Tambah untuk menyimpan.
+- Jika server menolak (contoh: ID tidak ditemukan di cabang), periksa pesan error dari backend dan kirim payload yang dikirim (log `UnitConversions: submit body`).
+
+---
+
+Entry ini merekam serangkaian perbaikan yang dilakukan untuk memastikan fitur `Konversi Satuan` bekerja konsisten dengan pola fitur lain di aplikasi.
+
+---
+
 ## File Penting & Logika Komposisi
 
 ### Auth & Session Management
@@ -655,4 +691,111 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Notes / Next steps**:
 - Verified UI locally (Vite dev server). If CI or remote push requires credentials, ensure SSH or token is configured.
 - If further formatting needed (spacing / font sizes), adjust `src/index.css` entries under `.stat-card` and `.profit-by-user-card`.
+
+---
+
+### 11. Unit Conversions Feature — Complete CRUD Implementation
+**Tanggal**: 2026-07-03
+**File Utama**:
+- `src/features/unit-conversions/` (new folder dengan 5 files)
+- `src/app/router.tsx` (updated)
+- `src/index.css` (updated)
+
+**Perubahan**:
+
+1. **New Files Created**:
+   - `src/features/unit-conversions/types/unit-conversions.ts` — UnitConversion interface & API types
+   - `src/features/unit-conversions/api/unit-conversions-api.ts` — API functions (CRUD + combos)
+   - `src/features/unit-conversions/hooks/useUnitConversions.ts` — Custom hook untuk data state & loading
+   - `src/features/unit-conversions/pages/unit-conversions-page.tsx` — Full UI component (~480 lines)
+
+2. **Type Definitions**:
+   - `UnitConversion`: id, product_id, product_name, from_unit_id, from_unit_name, to_unit_id, to_unit_name, conversion_value
+   - `ProductCombo`: id, nama/name
+   - `UnitCombo`: id, nama/name
+
+3. **API Layer** (`unit-conversions-api.ts`):
+   - `fetchUnitConversions(token, {page, search})` — GET /api/unit-conversions
+   - `createUnitConversion(token, body)` — POST /api/unit-conversions
+   - `updateUnitConversion(token, id, body)` — PUT /api/unit-conversions/{id}
+   - `deleteUnitConversion(token, id)` — DELETE /api/unit-conversions/{id}
+   - `fetchProductsCombo(token, {search})` — GET /api/conversion-products-combo
+   - `fetchUnitsCombo(token, {search})` — GET /api/units-combo
+
+4. **Custom Hook** (`useUnitConversions.ts`):
+   - State: unitConversions[], total, page, perPage, isLoading, error
+   - `loadUnitConversions(page, search)` — Fetch dengan pagination & search
+   - Auto-load on token change via useEffect
+   - Flexible response parser mendukung berbagai format pagination backend
+
+5. **UI Component** (`unit-conversions-page.tsx`):
+   - Search box dengan minimum 3 karakter sebelum trigger
+   - Tombol Refresh dengan animasi spin saat loading
+   - Tabel 6 kolom: No, Produk, Satuan Asal, Satuan Tujuan, Konversi, Aksi
+   - Modal Add/Edit dengan 4 fields (Produk combobox, Satuan Asal combobox, Satuan Tujuan combobox, Nilai Konversi input)
+   - Modal Delete confirmation
+   - Pagination dengan prev/next buttons
+   - Form validation (produk wajib, satuan asal & tujuan wajib dan berbeda, nilai konversi > 0)
+   - Combobox products dan units di-load paralel saat halaman dibuka
+   - Normalisasi field name response combo (id/nama vs id/name)
+
+6. **Router Update**:
+   - Import UnitConversionsPage
+   - Ganti route placeholder menjadi route aktif: `<Route path="/master/unit-conversions" element={<UnitConversionsPage />} />`
+
+7. **CSS Updates** (`src/index.css`):
+   - ~290 lines `.unit-conversions-page__*` classes
+   - BEM naming pattern
+   - Responsive design dengan media query 768px
+
+**Key Features**:
+- ✅ Auto-load data saat halaman dibuka
+- ✅ Search dengan 3+ chars minimum
+- ✅ Pagination (10 items per page)
+- ✅ Add conversion dengan validasi form
+- ✅ Edit conversion (pre-populate semua field termasuk combo dropdowns)
+- ✅ Delete conversion dengan confirmation
+- ✅ Product & unit dropdown auto-load dengan multiple API response format handling
+- ✅ Toast notifications untuk success/error
+- ✅ Form validation feedback dengan inline error messages
+- ✅ Validasi satuan asal dan tujuan harus berbeda
+- ✅ Tombol toolbar menggunakan `type="button"` mencegah form submit tidak sengaja
+
+**API Response Format Handling**:
+```javascript
+// Support multiple response formats:
+1. Direct array: [{ id, nama }, ...]
+2. Wrapped object: { data: [{ id, nama }, ...] }
+3. Field name normalization: 
+   - id
+   - nama / name
+```
+
+**Fixes Applied**:
+- Fixed toolbar buttons menggunakan `type="button"` untuk mencegah accidental form submit
+- Added validasi satuan asal != satuan tujuan
+- Added input number untuk conversion_value dengan step="any"
+- Added parallel fetch untuk products dan units combo dengan Promise.allSettled
+
+**Dampak**:
+- ✅ Unit Conversions feature 100% complete dengan parity ke Suppliers feature
+- ✅ Data integrity dengan proper type definitions
+- ✅ Robust API handling dengan fallback formats
+- ✅ Consistent UI/UX dengan rest of application
+- ✅ Reusable pattern untuk future CRUD features
+
+**Decision Log**:
+| Aspek | Pilihan | Alasan |
+|-------|---------|--------|
+| Validation | Different from/to units | Prevent invalid conversion like 1 unit to same unit |
+| Search threshold | 3+ chars | Match existing pattern in suppliers/units |
+| Per page | 10 items | Balance between density and readability |
+| Combo field names | Flexible normalization | Handle API variations robustly |
+| Parallel combo load | Promise.allSettled | Faster page load with graceful degradation |
+
+---
+
+**Last Updated**: 2026-07-03 - Unit Conversions Feature Complete
+**Status**: In Progress
+**Next Phase**: Complete remaining Master features (Products, Categories, etc)
 

@@ -15,6 +15,7 @@ import { ProfilePage } from '../features/shared/pages/profile-page'
 import { SalePosPage } from '../pages/SalePosPage'
 import { ReturPenjualanPage } from '../pages/ReturPenjualanPage'
 import { UnitsPage } from '../features/units/pages/units-page'
+import { UnitConversionsPage } from '../features/unit-conversions/pages/unit-conversions-page'
 import { MembersPage } from '../features/members/pages/members-page'
 import { CategoriesPage } from '../pages/CategoriesPage'
 import { MemberCategoriesPage } from '../pages/MemberCategoriesPage'
@@ -109,7 +110,7 @@ export function AppRouter() {
             <Route path="/membership/members" element={<MembersPage />} />
             <Route path="/master/product-categories" element={<CategoriesPage />} />
             <Route path="/master/satuan" element={<UnitsPage />} />
-            <Route path="/master/unit-conversions" element={<PagePlaceholder title="Konversi Satuan" description="Halaman konversi satuan akan memakai combo produk dan list berpaging dari backend aktif." />} />
+            <Route path="/master/unit-conversions" element={<UnitConversionsPage />} />
             <Route path="/master/supplier-categories" element={<SupplierCategoriesPage />} />
             <Route path="/master/suppliers" element={<SuppliersPage />} />
             <Route path="/master/products" element={<PagePlaceholder title="Produk" description="Halaman produk akan menjadi salah satu prioritas utama karena sudah punya list, detail, export, dan label." />} />
