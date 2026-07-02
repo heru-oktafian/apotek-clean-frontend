@@ -85,8 +85,6 @@ function deriveRoute(groupMenu: string, title: string): string {
     if (t === 'pelanggan') return '/master/customers';
     if (t === 'satuan') return '/master/satuan';
     if (t === 'konversi satuan') return '/master/unit-conversions';
-    if (t.includes('member') && t.includes('kategori')) return '/master/member-categories';
-    if (t === 'member') return '/master/members';
     return `/master/${t.replace(/\s+/g, '-')}`;
   }
 
@@ -124,8 +122,8 @@ function deriveRoute(groupMenu: string, title: string): string {
   }
 
   if (g === 'membership') {
-    if (t.includes('kategori member')) return '/master/member-categories';
-    if (t === 'member') return '/master/members';
+    if (t.includes('kategori member')) return '/membership/member-categories';
+    if (t === 'member') return '/membership/members';
     return `/membership/${t.replace(/\s+/g, '-')}`;
   }
 

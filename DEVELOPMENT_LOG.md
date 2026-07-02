@@ -454,9 +454,122 @@ GET /api/profile
 
 ---
 
-**Last Updated**: 2026-06-29 - Token Validation Implementation  
-**Status**: In Progress  
-**Next Phase**: Mulai implementasi feature halaman individual (Products, Transactions, dll)
+---
+
+### 10. Supplier Feature — Complete CRUD Implementation
+**Tanggal**: 2026-07-03
+**File Utama**:
+- `src/features/suppliers/` (new folder dengan 5 files)
+- `src/app/router.tsx` (updated)
+- `src/index.css` (updated)
+
+**Perubahan**:
+
+1. **New Files Created**:
+   - `src/features/suppliers/types/suppliers.ts` — Supplier interface & API types
+   - `src/features/suppliers/types/supplier-categories.ts` — Category types
+   - `src/features/suppliers/api/suppliers-api.ts` — API functions (CRUD + categories)
+   - `src/features/suppliers/hooks/useSuppliers.ts` — Custom hook untuk data state & loading
+   - `src/features/suppliers/pages/suppliers-page.tsx` — Full UI component (~450 lines)
+
+2. **Type Definitions**:
+   - `Supplier`: id, name, phone, address, supplier_category, supplier_category_id, pic (optional)
+   - `SupplierFormData`: name, phone, address, supplier_category_id, pic
+   - `SupplierCategory`: id, nama, branchId (optional)
+
+3. **API Layer** (`suppliers-api.ts`):
+   - `fetchSuppliers(token, {page, search})` — GET /api/suppliers
+   - `createSupplier(token, body)` — POST /api/suppliers
+   - `updateSupplier(token, id, body)` — PUT /api/suppliers/{id}
+   - `deleteSupplier(token, id)` — DELETE /api/suppliers/{id}
+   - `fetchSupplierCategories(token, {})` — GET /api/supplier-categories-combo
+
+4. **Custom Hook** (`useSuppliers.ts`):
+   - State: suppliers[], total, page, perPage, isLoading
+   - `loadSuppliers(page, search)` — Fetch dengan pagination & search
+   - Auto-load on token change via useEffect
+   - Selesaikan "need refresh" issue yang ada di awal
+
+5. **UI Component** (`suppliers-page.tsx`):
+   - Search box dengan minimum 3 karakter sebelum trigger
+   - Tombol Refresh
+   - Tabel 7 kolom: No, ID, Nama, Nomor Telepon, Alamat, Kategori Supplier, PIC, Aksi
+   - Modal Add/Edit dengan 5 fields (tanpa labels, alamat pakai textarea)
+   - Modal Delete confirmation
+   - Pagination dengan prev/next buttons
+   - Form validation
+   - Integrated dengan supplier categories dropdown
+
+6. **Router Update**:
+   - Import SuppliersPage
+   - Tambah route: `<Route path="/master/suppliers" element={<SuppliersPage />} />`
+
+7. **CSS Updates** (`src/index.css`):
+   - ~300 lines `.suppliers-page__*` classes
+   - BEM naming pattern sesuai `.members-page__*`
+   - Responsive design dengan media query 768px
+
+**Key Features**:
+- ✅ Auto-load data saat halaman dibuka
+- ✅ Search dengan 3+ karakter minimum
+- ✅ Pagination (5 items per page)
+- ✅ Add supplier dengan validasi form
+- ✅ Edit supplier (pre-populate semua field termasuk PIC)
+- ✅ Delete supplier dengan confirmation
+- ✅ Category dropdown auto-load dengan multiple API response format handling
+- ✅ Toast notifications untuk success/error
+- ✅ Form validation feedback
+
+**API Response Format Handling**:
+```javascript
+// Support multiple category response formats:
+1. Direct array: [{ id, nama }, ...]
+2. Wrapped object: { data: [{ id, nama }, ...] }
+3. Field name normalization: 
+   - id / supplier_category_id / supplierCategoryId
+   - nama / name / supplier_category_name
+```
+
+**Fixes Applied**:
+- Fixed missing `supplier_category_id` in response parsing
+- Fixed `pic` vs `contact_person` field mismatch
+- Fixed category dropdown showing empty (multiple response format handling)
+- Fixed text-field PIC not connecting to data (nullish coalescing `??` instead of `||`)
+- Converted form select values to string for proper controlled component behavior
+- Changed Alamat field from Input to textarea (3 rows, non-resizable)
+- Removed all labels dari form fields
+
+**Dampak**:
+- ✅ Supplier feature 100% complete dengan parity ke Members feature
+- ✅ Data integrity dengan proper type definitions
+- ✅ Robust API handling dengan fallback formats
+- ✅ Consistent UI/UX dengan rest of application
+- ✅ Reusable pattern untuk future CRUD features
+
+**Testing**:
+- Search: Works dengan 3+ chars minimum
+- Pagination: Prev/next buttons navigate correctly
+- Add: Modal opens, form validates, saves to API
+- Edit: Data pre-populates including PIC field
+- Delete: Confirmation modal, removes from table
+- Categories: Dropdown populates correctly
+- Responsive: Works on mobile/tablet
+
+**Decision Log**:
+| Aspek | Pilihan | Alasan |
+|-------|---------|--------|
+| Field name | `pic` vs `contact_person` | Match API response structure |
+| Category load | Flexible response format | Handle API variations robustly |
+| Alamat widget | textarea vs input | Better for longer addresses |
+| Form labels | Remove all | Cleaner UI per request |
+| Validation | Required fields only | name, phone, address, category |
+| PIC required | No (optional) | Matches API design |
+
+---
+
+**Last Updated**: 2026-07-03 - Supplier Feature Complete
+**Status**: In Progress
+**Next Phase**: Complete remaining Master features (Products, Categories, Units, etc)
 
 ---
 
