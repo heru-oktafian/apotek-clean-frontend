@@ -164,15 +164,25 @@ export const fetchProfitTodayByUser = async (token: string) => {
 // GET /api/dashboard/monthly-profit-report
 // Returns raw data array for dual-line chart (Omset + Profit)
 export const fetchMonthlyChart = async (token: string) => {
-  const res = await apiRequest<{ data: { data: MonthlyChartItem[] } }>(
+  const res = await apiRequest<any>(
     '/api/dashboard/monthly-profit-report',
     { token }
   );
-  // Transform: total_sales → omset, profit_estimate → profit
-  return (res.data?.data ?? []).map((item) => ({
-    report_date: item.report_date,
-    omset: item.total_sales,
-    profit: item.profit_estimate,
+
+  const payload = res?.data ?? res;
+
+  const itemsSource = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray(payload)
+    ? payload
+    : [];
+
+  return itemsSource.map((item: any) => ({
+    report_date: item?.report_date ?? item?.date ?? item?.label ?? String(item?.day ?? ''),
+    omset: Number(item?.total_sales ?? item?.omset ?? item?.sales ?? item?.total ?? 0) || 0,
+    profit: Number(item?.profit_estimate ?? item?.profit ?? item?.profit_amount ?? 0) || 0,
   }));
 };
 

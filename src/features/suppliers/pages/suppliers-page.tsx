@@ -135,7 +135,7 @@ export function SuppliersPage() {
       phone: '',
       address: '',
       supplier_category_id: 0,
-      contact_person: '',
+      pic: '',
     });
     setFormErrors({});
     setIsAddOpen(true);

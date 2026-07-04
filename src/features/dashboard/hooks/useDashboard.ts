@@ -111,12 +111,22 @@ export function useDashboard(): UseDashboardReturn {
         fetchSales(activeToken, 1, 5),
       ]).then((results) => results.map((r) => (r.status === 'fulfilled' ? r.value : null)));
 
+      const resolvedMonthlyChart = Array.isArray(monthlyChart)
+        ? monthlyChart
+        : Array.isArray(monthlyProfit?.data)
+        ? (monthlyProfit?.data ?? []).map((item: any) => ({
+            report_date: item?.report_date ?? item?.date ?? item?.label ?? String(item?.day ?? ''),
+            omset: Number(item?.total_sales ?? item?.omset ?? item?.sales ?? item?.total ?? 0) || 0,
+            profit: Number(item?.profit_estimate ?? item?.profit ?? item?.profit_amount ?? 0) || 0,
+          }))
+        : [];
+
       setData({
         dailyProfit: dailyProfit ?? null,
         weeklyProfit: weeklyProfit ?? null,
         monthlyProfit: monthlyProfit ?? null,
         profitByUser: profitByUser ?? null,
-        monthlyChart: monthlyChart ?? [],
+        monthlyChart: resolvedMonthlyChart,
         nearExpired: nearExpired ?? [],
         topSelling: topSelling ?? [],
         leastSelling: leastSelling ?? [],

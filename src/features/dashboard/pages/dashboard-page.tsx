@@ -277,10 +277,28 @@ export function DashboardPage() {
   }
 
   const chartData = (monthlyChart ?? []).map((item) => ({
-    date: item.report_date,
-    omset: item.omset,
-    profit: item.profit,
+    date: item.report_date ?? item.date ?? item.label ?? String(item?.day ?? ''),
+    omset: item.omset ?? item.total_sales ?? item.sales ?? item.total ?? 0,
+    profit: item.profit ?? item.profit_estimate ?? item.profit_amount ?? 0,
   }));
+
+  const fallbackChartData = (!loading && chartData.length === 0 && Array.isArray(monthlyProfit?.data))
+    ? (monthlyProfit?.data ?? []).map((item: any) => ({
+        date: item.report_date ?? item.date ?? item.label ?? String(item?.day ?? ''),
+        omset: item.omset ?? item.total_sales ?? item.sales ?? item.total ?? 0,
+        profit: item.profit ?? item.profit_estimate ?? item.profit_amount ?? 0,
+      }))
+    : [];
+
+  const effectiveChartData = chartData.length > 0 ? chartData : fallbackChartData;
+
+  console.debug('Dashboard chart debug', {
+    loading,
+    monthlyChart,
+    monthlyProfitData: monthlyProfit?.data,
+    chartDataLength: chartData.length,
+    effectiveChartDataLength: effectiveChartData.length,
+  });
 
   return (
     <div className="dashboard-shell__main">
@@ -307,12 +325,12 @@ export function DashboardPage() {
       </div>
 
       {/* Chart */}
-      {!loading && chartData.length > 0 && (
+      {!loading && effectiveChartData.length > 0 ? (
         <div className="chart-card">
           <h2 className="chart-card__title stat-card__label">Tren Bulanan</h2>
           <div className="chart-card__body">
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <LineChart data={effectiveChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} />
                 <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(v) => formatNumber(v)} />
@@ -351,6 +369,23 @@ export function DashboardPage() {
             </ResponsiveContainer>
           </div>
         </div>
+      ) : (
+        !loading && (
+          <div className="chart-card">
+            <h2 className="chart-card__title stat-card__label">Tren Bulanan</h2>
+            <div className="chart-card__body">
+              <p style={{ color: 'var(--text-muted)', margin: 0 }}>Data tren bulanan belum tersedia.</p>
+              <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0' }}>
+                monthlyChart length: {monthlyChart?.length ?? 0}, monthlyProfit.data length: {Array.isArray(monthlyProfit?.data) ? monthlyProfit.data.length : 0}
+              </p>
+              {Array.isArray(monthlyProfit?.data) && monthlyProfit.data.length > 0 && (
+                <pre style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0', whiteSpace: 'pre-wrap', maxHeight: '8rem', overflow: 'auto' }}>
+                  First item: {JSON.stringify(monthlyProfit.data[0], null, 2)}
+                </pre>
+              )}
+            </div>
+          </div>
+        )
       )}
 
       <button

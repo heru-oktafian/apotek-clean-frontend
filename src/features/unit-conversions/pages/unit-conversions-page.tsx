@@ -450,7 +450,7 @@ export function UnitConversionsPage() {
       {/* Toolbar - Tombol Tambah */}
       <div className="unit-conversions-page__toolbar">
         <button type="button" className="unit-conversions-page__btn-tambah" onClick={openAddConversion}>
-          <Plus size={14} /> Tambah +
+          Tambah +
         </button>
       </div>
 

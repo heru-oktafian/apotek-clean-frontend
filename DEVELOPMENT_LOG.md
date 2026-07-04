@@ -338,6 +338,34 @@ Tujuan: Floating button hanya ada di dashboard, dan tidak mengganggu drawer menu
 - Modal diperbaiki (`overflow-visible`, z-index) dan pointer events dihentikan pada container agar native select dropdown dapat dipilih tanpa menutup modal.
 - Normalisasi data pada `useUnitConversions` sehingga tabel selalu menerima field yang konsisten (`product_id`, `product_name`, `from_unit_id`, `from_unit_name`, `to_unit_id`, `to_unit_name`, `conversion_value`).
 - Normalisasi item saat membuka edit modal: resolve id/name dari berbagai field yang mungkin dikembalikan backend sehingga combobox edit menampilkan nilai yang benar.
+
+---
+
+### 10. Perbaikan Dashboard Tren Bulanan (Omset + Profit)
+**Tanggal**: 2026-07-04
+**File Utama**:
+- `src/features/dashboard/api/dashboard-api.ts`
+- `src/features/dashboard/hooks/useDashboard.ts`
+- `src/features/dashboard/pages/dashboard-page.tsx`
+
+**Perubahan & Perbaikan**:
+- Memperbaiki rendering chart tren bulanan agar data dipakai dari `monthlyChart` atau fallback `monthlyProfit.data`.
+- Menambahkan normalisasi field `report_date`, `total_sales`, `profit_estimate` dalam fetch chart.
+- Memastikan `LineChart` menggunakan `effectiveChartData` yang sudah ter-normalisasi.
+- Menambahkan fallback UI dan debug log supaya jika data belum tersedia, pengguna mendapat informasi jelas.
+
+**Logika**:
+```
+1. `fetchMonthlyChart` sekarang mendukung respon API nested `data` dan field `total_sales` / `profit_estimate`.
+2. `useDashboard` akan membuat `monthlyChart` dari `monthlyProfit.data` jika endpoint chart kosong.
+3. `DashboardPage` menggunakan `effectiveChartData` untuk render garis Omset dan Profit.
+4. Jika data tetap kosong, tampilkan pesan fallback dengan jumlah item data.
+```
+
+**Dampak**:
+- Chart bulanan kembali muncul ketika API memberikan data `monthlyProfit.data`.
+- UI tidak lagi kehilangan diagram jika route dashboard memuat data dalam struktur respons yang sedikit berbeda.
+- Debugging menjadi lebih mudah melalui pesan fallback yang informative.
 - Normalisasi mapping menu label untuk konsistensi ikon di sidebar dan mobile bottom bar.
 - Menambahkan debug logging (console.debug / console.warn) sementara untuk membantu verifikasi response; debug dihapus/dinonaktifkan di UI setelah verifikasi.
 

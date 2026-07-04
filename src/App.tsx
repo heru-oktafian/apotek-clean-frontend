@@ -6,11 +6,11 @@ import { AuthProvider } from './features/auth/auth-context';
 import { LoginPage } from './features/auth/pages/login-page';
 import { BranchSelectionPage } from './features/auth/pages/branch-selection-page';
 import { DashboardPage } from './features/dashboard/pages/dashboard-page';
-import { ProductsPage } from './pages/ProductsPage';
-import { CategoriesPage } from './pages/CategoriesPage';
-import { SuppliersPage } from './pages/SuppliersPage';
-import { SalePosPage } from './pages/SalePosPage';
-import { ReturPenjualanPage } from './pages/ReturPenjualanPage';
+import { ProductsPage } from './features/products/pages/products-page';
+import { CategoriesPage } from './features/categories/pages/categories-page';
+import { SuppliersPage } from './features/suppliers/pages/suppliers-page';
+import { SalePosPage } from './features/sale-pos/pages/sale-pos-page';
+import { ReturPenjualanPage } from './features/retur-penjualan/pages/retur-penjualan-page';
 
 const queryClient = new QueryClient({
   defaultOptions: {
