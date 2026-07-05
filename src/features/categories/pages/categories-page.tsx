@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Download, Search, Plus } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw, Download, Search } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { Button, Input, Modal, useToast, Table, type TableColumn } from '../../../components/ui';
-import { apiRequest } from '../../../lib/api/client';
+import { Button, Input, Modal, Pagination, useToast, Table, type TableColumn } from '../../../components/ui';
 import { buildApiUrl } from '../../../lib/api/env';
 import { useCategories, type Category } from '../hooks/useCategories';
+import { createCategory, updateCategory, deleteCategory } from '../api/categories-api';
 
 export function CategoriesPage() {
   const { activeToken } = useAuth();
@@ -18,8 +18,6 @@ export function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const { categories, page, setPage, perPage, total, isLoading, apiError, loadCategories } = useCategories();
-
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -70,19 +68,13 @@ export function CategoriesPage() {
     }
 
     try {
+      const body = { name: categoryName, nama: categoryName, product_category_name: categoryName };
+
       if (editingCategory) {
-        await apiRequest<any>(`/api/product-categories/${editingCategory.id}`, {
-          method: 'PUT',
-          token: activeToken,
-          body: { name: categoryName, nama: categoryName, product_category_name: categoryName },
-        });
+        await updateCategory(activeToken, editingCategory.id, body);
         toast.addToast('Kategori produk berhasil diperbarui.', 'success');
       } else {
-        await apiRequest<any>(`/api/product-categories`, {
-          method: 'POST',
-          token: activeToken,
-          body: { name: categoryName, nama: categoryName, product_category_name: categoryName },
-        });
+        await createCategory(activeToken, body);
         toast.addToast('Kategori produk berhasil ditambahkan.', 'success');
       }
 
@@ -117,10 +109,7 @@ export function CategoriesPage() {
     }
 
     try {
-      await apiRequest<any>(`/api/product-categories/${deleteTarget.id}`, {
-        method: 'DELETE',
-        token: activeToken,
-      });
+      await deleteCategory(activeToken, deleteTarget.id);
       toast.addToast('Kategori produk berhasil dihapus.', 'success');
       closeDeleteConfirm();
       void loadCategories(1, activeSearch);
@@ -136,6 +125,11 @@ export function CategoriesPage() {
     setSearchQuery('');
     void loadCategories(1, '');
     toast.addToast('Data kategori disegarkan.', 'success');
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    void loadCategories(nextPage, activeSearch);
   };
 
   const downloadFile = async (path: string, defaultName: string) => {
@@ -266,16 +260,12 @@ export function CategoriesPage() {
         </div>
       </Modal>
 
-      <div className="units-page__pagination">
-        <div className="units-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min((page - 1) * perPage + 1, total)}-${Math.min(page * perPage, total)} dari ${total}`}
-        </div>
-        <div className="units-page__pagination-controls">
-          <button className="units-page__pagination-btn" onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1}>←</button>
-          <span className="units-page__pagination-number">{page}</span>
-          <button className="units-page__pagination-btn" onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page >= totalPages}>→</button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

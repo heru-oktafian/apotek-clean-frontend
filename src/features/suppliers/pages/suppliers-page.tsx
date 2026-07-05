@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Edit2, Trash2, RefreshCw, Search, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { fetchSupplierCategories, createSupplier, updateSupplier, deleteSupplier } from '../api/suppliers-api';
-import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
+import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import type { Supplier } from '../types/suppliers';
 import type { SupplierCategory } from '../types/supplier-categories';
 
@@ -45,6 +45,10 @@ export function SuppliersPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const { suppliers, total, page, perPage, isLoading, loadSuppliers } = useSuppliers(activeToken || '');
+
+  const handlePageChange = (nextPage: number) => {
+    loadSuppliers(nextPage, activeSearch);
+  };
 
   // Load supplier categories for modal form
   useEffect(() => {
@@ -112,19 +116,6 @@ export function SuppliersPage() {
 
   const handleRefresh = () => {
     loadSuppliers(page, activeSearch);
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      loadSuppliers(page - 1, activeSearch);
-    }
-  };
-
-  const handleNextPage = () => {
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    if (page < totalPages) {
-      loadSuppliers(page + 1, activeSearch);
-    }
   };
 
   // CRUD Handlers
@@ -310,7 +301,6 @@ export function SuppliersPage() {
     },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
   const startItem = total === 0 ? 0 : (page - 1) * perPage + 1;
   const endItem = total === 0 ? 0 : Math.min(page * perPage, total);
 
@@ -486,29 +476,13 @@ export function SuppliersPage() {
         </div>
       </Modal>
 
-      {/* Pagination */}
-      <div className="suppliers-page__pagination">
-        <div className="suppliers-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${startItem}-${endItem} dari ${total}`}
-        </div>
-        <div className="suppliers-page__pagination-controls">
-          <button
-            className="suppliers-page__pagination-btn"
-            onClick={handlePreviousPage}
-            disabled={page === 1}
-          >
-            ←
-          </button>
-          <span className="suppliers-page__pagination-number">{page}</span>
-          <button
-            className="suppliers-page__pagination-btn"
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={handlePageChange}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Edit2, Trash2, RefreshCw, Search } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useMembers } from '../hooks/useMembers';
 import { fetchMemberCategories, createMember, updateMember, deleteMember } from '../api/members-api';
-import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
+import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import type { Member } from '../types/members';
 import type { MemberCategory } from '../types/member-categories';
 
@@ -108,17 +108,8 @@ export function MembersPage() {
     loadMembers(page, activeSearch);
   };
 
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      loadMembers(page - 1, activeSearch);
-    }
-  };
-
-  const handleNextPage = () => {
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    if (page < totalPages) {
-      loadMembers(page + 1, activeSearch);
-    }
+  const handlePageChange = (nextPage: number) => {
+    loadMembers(nextPage, activeSearch);
   };
 
   // CRUD Handlers
@@ -300,10 +291,6 @@ export function MembersPage() {
     },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const startItem = total === 0 ? 0 : (page - 1) * perPage + 1;
-  const endItem = total === 0 ? 0 : Math.min(page * perPage, total);
-
   const dataWithIndex: MemberWithIndex[] = members.map((member, index) => ({
     ...member,
     _index: index,
@@ -469,31 +456,13 @@ export function MembersPage() {
         </div>
       </Modal>
 
-      {/* Pagination Info & Controls */}
-      <div className="members-page__pagination">
-        <div className="members-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${startItem}-${endItem} dari ${total}`}
-        </div>
-        <div className="members-page__pagination-controls">
-          <button
-            className="members-page__pagination-btn"
-            onClick={handlePreviousPage}
-            disabled={page === 1}
-            title="Halaman sebelumnya"
-          >
-            ←
-          </button>
-          <span className="members-page__pagination-number">{page}</span>
-          <button
-            className="members-page__pagination-btn"
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-            title="Halaman berikutnya"
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={handlePageChange}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 }

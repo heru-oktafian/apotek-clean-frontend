@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../lib/api/client';
-import type { UnitsResponse, UnitsListParams } from '../types/units';
+import type { Unit, UnitsResponse, UnitsListParams } from '../types/units';
 
 // ── List Units ──────────────────────────────────────────────────────────────
 // GET /api/units?page=1&per_page=7&search=...

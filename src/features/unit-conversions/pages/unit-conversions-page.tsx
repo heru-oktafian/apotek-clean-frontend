@@ -8,13 +8,21 @@ import {
   deleteUnitConversion,
   fetchProductsCombo,
   fetchUnitsCombo,
+  type UnitConversionPayload,
 } from '../api/unit-conversions-api';
-import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
+import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import type { UnitConversion } from '../types/unit-conversions';
 import type { ProductCombo, UnitCombo } from '../types/unit-conversions';
 
 interface UnitConversionWithIndex extends UnitConversion {
   _index?: number;
+}
+
+interface UnitConversionEditable extends UnitConversion {
+  init_id?: string | number;
+  initId?: string | number;
+  final_id?: string | number;
+  finalId?: string | number;
 }
 
 interface UnitConversionFormData {
@@ -142,19 +150,6 @@ export function UnitConversionsPage() {
     loadUnitConversions(page, activeSearch);
   };
 
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      loadUnitConversions(page - 1, activeSearch);
-    }
-  };
-
-  const handleNextPage = () => {
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    if (page < totalPages) {
-      loadUnitConversions(page + 1, activeSearch);
-    }
-  };
-
   const openAddConversion = () => {
     setEditingConversion(null);
     setFormData({
@@ -167,7 +162,7 @@ export function UnitConversionsPage() {
     setIsAddOpen(true);
   };
 
-  const openEditConversion = (conversion: UnitConversion) => {
+  const openEditConversion = (conversion: UnitConversionEditable) => {
     setEditingConversion(conversion);
     // Try to resolve product and unit ids against loaded combos
     const resolveProductId = (conv: UnitConversion) => {
@@ -206,7 +201,7 @@ export function UnitConversionsPage() {
       product_id: resolveProductId(conversion),
       from_unit_id: resolveUnitId(conversion.from_unit_id ?? conversion.from_unit_name ?? conversion.init_id ?? conversion.initId),
       to_unit_id: resolveUnitId(conversion.to_unit_id ?? conversion.to_unit_name ?? conversion.final_id ?? conversion.finalId),
-      conversion_value: conversion.conversion_value ?? 1,
+      conversion_value: conversion.conversion_value ?? conversion.value_conv ?? 1,
     });
     setFormErrors({});
     setIsAddOpen(true);
@@ -263,7 +258,7 @@ export function UnitConversionsPage() {
     setIsSubmitting(true);
     try {
       // Backend expects keys: product_id, init_id, final_id, value_conv
-      const body = {
+      const body: UnitConversionPayload = {
         product_id: String(formData.product_id),
         init_id: String(formData.from_unit_id),
         final_id: String(formData.to_unit_id),
@@ -590,29 +585,12 @@ export function UnitConversionsPage() {
         </div>
       </Modal>
 
-      {/* Pagination */}
-      <div className="unit-conversions-page__pagination">
-        <div className="unit-conversions-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${startItem}-${endItem} dari ${total}`}
-        </div>
-        <div className="unit-conversions-page__pagination-controls">
-          <button
-            className="unit-conversions-page__pagination-btn"
-            onClick={handlePreviousPage}
-            disabled={page === 1}
-          >
-            ←
-          </button>
-          <span className="unit-conversions-page__pagination-number">{page}</span>
-          <button
-            className="unit-conversions-page__pagination-btn"
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(nextPage) => loadUnitConversions(nextPage, activeSearch)}
+      />
     </div>
   );
 }
