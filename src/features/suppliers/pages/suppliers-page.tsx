@@ -357,7 +357,7 @@ export function SuppliersPage() {
       {/* Toolbar - Tombol Tambah */}
       <div className="suppliers-page__toolbar">
         <button className="suppliers-page__btn-tambah" onClick={openAddSupplier}>
-          <Plus size={14} /> Tambah +
+          Tambah +
         </button>
       </div>
 

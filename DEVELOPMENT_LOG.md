@@ -385,6 +385,32 @@ Entry ini merekam serangkaian perbaikan yang dilakukan untuk memastikan fitur `K
 
 ---
 
+### 11. Implementasi Halaman Master Produk & Penyesuaian Halaman Supplier
+**Tanggal**: 2026-07-05
+**File Utama**:
+- `src/features/products/pages/products-page.tsx`
+- `src/features/products/api/products-api.ts`
+- `src/features/products/hooks/useProducts.ts`
+- `src/features/products/types/products.ts`
+- `src/features/suppliers/pages/suppliers-page.tsx`
+- `src/app/router.tsx`
+- `src/index.css`
+
+**Perubahan & Perbaikan**:
+- Menambahkan halaman master produk dengan list data, pencarian, pagination, aksi edit/hapus, serta tombol unduh label, PDF, dan Excel.
+- Menghubungkan halaman produk ke hook dan API terpisah agar list produk bisa dimuat dari backend dengan state loading yang lebih terkelola.
+- Menambahkan dukungan untuk format respons produk dan download file yang lebih konsisten pada flow frontend.
+- Menyesuaikan halaman supplier agar memuat kategori supplier dari endpoint dan menyelaraskan form modal dengan data backend.
+- Mendaftarkan route halaman produk ke router aplikasi agar dapat diakses dari navigasi utama.
+- Menambahkan styling untuk layout list master, toolbar, tabel, dan modal agar tampilan konsisten dengan halaman lain.
+
+**Dampak**:
+- Fitur master produk kini memiliki dasar UI dan alur data yang siap dikembangkan lebih lanjut.
+- Halaman supplier lebih stabil saat membuka form edit/tambah karena data kategori sudah diproses dengan lebih baik.
+- Navigasi aplikasi menjadi lebih lengkap karena route produk sudah aktif.
+
+---
+
 ## File Penting & Logika Komposisi
 
 ### Auth & Session Management
