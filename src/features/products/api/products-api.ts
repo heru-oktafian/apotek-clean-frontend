@@ -64,6 +64,47 @@ export async function fetchProducts(
   return response as ProductsListResponse;
 }
 
+export interface CreateProductPayload {
+  sku: string;
+  name: string;
+  alias: string;
+  description: string;
+  ingredient: string;
+  dosage: string;
+  side_affection: string;
+  unit_id: string;
+  purchase_price: number;
+  sales_price: number;
+  alternate_price: number;
+  expired_date: string;
+  product_category_id: number;
+}
+
+export interface UpdateProductPayload extends CreateProductPayload {}
+
+export async function createProduct(
+  token: string,
+  body: CreateProductPayload
+) {
+  return apiRequest<Product>('/api/products', {
+    token,
+    method: 'POST',
+    body,
+  });
+}
+
+export async function updateProduct(
+  token: string,
+  id: string,
+  body: UpdateProductPayload
+) {
+  return apiRequest<Product>(`/api/products/${id}`, {
+    token,
+    method: 'PUT',
+    body,
+  });
+}
+
 /**
  * Download product label as PDF
  * @param token Auth token

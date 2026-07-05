@@ -2,12 +2,36 @@ import { useEffect, useState } from 'react';
 import { Edit2, Trash2, RefreshCw, Search, Plus, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useProducts } from '../hooks/useProducts';
-import { downloadProductLabel, downloadProductsPDF, downloadProductsExcel } from '../api/products-api';
+import {
+  createProduct,
+  fetchProductCategoriesCombo,
+  fetchUnitsCombo,
+  downloadProductLabel,
+  downloadProductsExcel,
+  downloadProductsPDF,
+  updateProduct,
+} from '../api/products-api';
 import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
-import type { Product } from '../types/products';
+import type { Product, ProductCategory, Unit } from '../types/products';
 
 interface ProductWithIndex extends Product {
   _index?: number;
+}
+
+interface ProductFormData {
+  sku: string;
+  name: string;
+  alias: string;
+  description: string;
+  ingredient: string;
+  dosage: string;
+  side_affection: string;
+  product_category_id: number;
+  unit_id: string;
+  purchase_price: number;
+  sales_price: number;
+  alternate_price: number;
+  expired_date: string;
 }
 
 export function ProductsPage() {
@@ -20,8 +44,27 @@ export function ProductsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [formData, setFormData] = useState<ProductFormData>({
+    sku: '',
+    name: '',
+    alias: '',
+    description: '',
+    ingredient: '',
+    dosage: '',
+    side_affection: '',
+    product_category_id: 0,
+    unit_id: '',
+    purchase_price: 0,
+    sales_price: 0,
+    alternate_price: 0,
+    expired_date: '',
+  });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
   // Download states
   const [isDownloadingLabel, setIsDownloadingLabel] = useState(false);
@@ -31,6 +74,28 @@ export function ProductsPage() {
   const { products, total, page, perPage, isLoading, loadProducts } = useProducts();
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const [pageInput, setPageInput] = useState(String(page));
+
+  useEffect(() => {
+    if (!activeToken) return;
+
+    const loadCombos = async () => {
+      try {
+        const [categoriesResponse, unitsResponse] = await Promise.all([
+          fetchProductCategoriesCombo(activeToken, {}),
+          fetchUnitsCombo(activeToken, {}),
+        ]);
+
+        setProductCategories(categoriesResponse.data || []);
+        setUnits(unitsResponse.data || []);
+      } catch (error) {
+        console.error('Failed to load product combos:', error);
+        setProductCategories([]);
+        setUnits([]);
+      }
+    };
+
+    void loadCombos();
+  }, [activeToken]);
 
   useEffect(() => {
     setPageInput(String(page));
@@ -109,14 +174,56 @@ export function ProductsPage() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      sku: '',
+      name: '',
+      alias: '',
+      description: '',
+      ingredient: '',
+      dosage: '',
+      side_affection: '',
+      product_category_id: 0,
+      unit_id: '',
+      purchase_price: 0,
+      sales_price: 0,
+      alternate_price: 0,
+      expired_date: '',
+    });
+    setFormErrors({});
+  };
+
+  const openAddProduct = () => {
+    setEditingProduct(null);
+    resetForm();
+    setIsEditOpen(true);
+  };
+
   const openEditProduct = (product: Product) => {
     setEditingProduct(product);
+    setFormData({
+      sku: product.sku,
+      name: product.name,
+      alias: product.alias ?? '',
+      description: product.description ?? '',
+      ingredient: product.ingredient ?? '',
+      dosage: product.dosage ?? '',
+      side_affection: product.side_affection ?? '',
+      product_category_id: product.product_category_id,
+      unit_id: product.unit_id,
+      purchase_price: product.purchase_price,
+      sales_price: product.sales_price,
+      alternate_price: product.alternate_price,
+      expired_date: product.expired_date ? product.expired_date.split('T')[0] : '',
+    });
+    setFormErrors({});
     setIsEditOpen(true);
   };
 
   const closeEditProduct = () => {
     setEditingProduct(null);
     setIsEditOpen(false);
+    resetForm();
   };
 
   const openDeleteConfirm = (product: Product) => {
@@ -143,6 +250,53 @@ export function ProductsPage() {
       toast.addToast('Gagal menghapus produk.', 'error');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Partial<Record<keyof ProductFormData, string>> = {};
+
+    if (!formData.sku.trim()) errors.sku = 'SKU wajib diisi';
+    if (!formData.name.trim()) errors.name = 'Nama produk wajib diisi';
+    if (!formData.product_category_id) errors.product_category_id = 'Kategori wajib dipilih';
+    if (!formData.unit_id.trim()) errors.unit_id = 'Satuan wajib dipilih';
+    if (formData.purchase_price <= 0) errors.purchase_price = 'Harga beli harus lebih besar dari 0';
+    if (formData.sales_price <= 0) errors.sales_price = 'Harga jual harus lebih besar dari 0';
+    if (formData.expired_date && isNaN(Date.parse(formData.expired_date))) errors.expired_date = 'Tanggal kedaluwarsa tidak valid';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleProductFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.addToast('Periksa kembali form produk.', 'error');
+      return;
+    }
+
+    if (!activeToken) {
+      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      return;
+    }
+
+    try {
+      const payload = { ...formData };
+
+      if (editingProduct?.id) {
+        await updateProduct(activeToken, editingProduct.id, payload);
+        toast.addToast('Produk berhasil diperbarui.', 'success');
+      } else {
+        await createProduct(activeToken, payload);
+        toast.addToast('Produk berhasil ditambahkan.', 'success');
+      }
+
+      closeEditProduct();
+      loadProducts(1, activeSearch);
+    } catch (error) {
+      console.error(error);
+      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan produk.', 'error');
     }
   };
 
@@ -226,31 +380,49 @@ export function ProductsPage() {
       key: 'name',
       header: 'Nama',
       render: (row) => row.name,
+      align: 'left',
+    },
+    {
+      key: 'alias',
+      header: 'Alias',
+      render: (row) => row.alias || '-',
+      align: 'left',
     },
     {
       key: 'product_category_name',
       header: 'Kategori',
       render: (row) => row.product_category_name,
+      align: 'left',
     },
     {
       key: 'unit_name',
       header: 'Satuan',
       render: (row) => row.unit_name,
+      align: 'left',
     },
     {
       key: 'stock',
       header: 'Stok',
       render: (row) => row.stock,
+      align: 'right',
+    },
+    {
+      key: 'expired_date',
+      header: 'Kadaluwarsa',
+      render: (row) => row.expired_date ? new Date(row.expired_date).toLocaleDateString('id-ID') : '-',
+      align: 'center',
     },
     {
       key: 'purchase_price',
       header: 'Harga Beli',
       render: (row) => formatCurrency(row.purchase_price),
+      align: 'right',
     },
     {
       key: 'sales_price',
       header: 'Harga Jual',
       render: (row) => formatCurrency(row.sales_price),
+      align: 'right',
     },
     {
       key: 'actions',
@@ -334,7 +506,7 @@ export function ProductsPage() {
 
       {/* Toolbar - Tambah dan Download */}
       <div className="products-page__toolbar">
-        <button className="products-page__btn-tambah" onClick={() => {}} >
+        <button className="products-page__btn-tambah" onClick={openAddProduct}>
           Tambah +
         </button>
         <div className="products-page__toolbar-downloads">
@@ -398,49 +570,198 @@ export function ProductsPage() {
       <Modal
         open={isEditOpen}
         onClose={closeEditProduct}
-        title="Edit Produk"
-        size="md"
+        title={editingProduct ? 'Ubah Produk' : 'Tambah Produk'}
+        size="xl"
       >
-        <div className="space-y-4">
-          {editingProduct && (
-            <>
-              <div>
-                <p className="text-sm font-medium text-slate-700">SKU</p>
-                <p className="text-slate-900">{editingProduct.sku}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Nama</p>
-                <p className="text-slate-900">{editingProduct.name}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Kategori</p>
-                <p className="text-slate-900">{editingProduct.product_category_name}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Satuan</p>
-                <p className="text-slate-900">{editingProduct.unit_name}</p>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Harga Beli</p>
-                  <p className="text-slate-900">{formatCurrency(editingProduct.purchase_price)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Harga Jual</p>
-                  <p className="text-slate-900">{formatCurrency(editingProduct.sales_price)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Stok</p>
-                  <p className="text-slate-900">{editingProduct.stock}</p>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={closeEditProduct}>Tutup</Button>
-                <Button type="button">Ubah</Button>
-              </div>
-            </>
-          )}
-        </div>
+        <form onSubmit={handleProductFormSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Input
+                placeholder="SKU"
+                value={formData.sku}
+                onChange={(e) => {
+                  setFormData({ ...formData, sku: e.target.value });
+                  if (formErrors.sku) setFormErrors({ ...formErrors, sku: undefined });
+                }}
+                aria-label="SKU"
+              />
+              {formErrors.sku && <p className="text-sm text-red-600 mt-1">{formErrors.sku}</p>}
+            </div>
+            <div>
+              <Input
+                placeholder="Nama produk"
+                value={formData.name}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+                }}
+                aria-label="Nama produk"
+              />
+              {formErrors.name && <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <select
+                value={String(formData.product_category_id)}
+                onChange={(e) => {
+                  setFormData({ ...formData, product_category_id: Number(e.target.value) });
+                  if (formErrors.product_category_id) setFormErrors({ ...formErrors, product_category_id: undefined });
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label="Kategori produk"
+              >
+                <option value="0">Pilih Kategori Produk</option>
+                {productCategories.map((category) => (
+                  <option key={category.product_category_id} value={String(category.product_category_id)}>
+                    {category.product_category_name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.product_category_id && <p className="text-sm text-red-600 mt-1">{formErrors.product_category_id}</p>}
+            </div>
+            <div>
+              <select
+                value={formData.unit_id}
+                onChange={(e) => {
+                  setFormData({ ...formData, unit_id: e.target.value });
+                  if (formErrors.unit_id) setFormErrors({ ...formErrors, unit_id: undefined });
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label="Satuan produk"
+              >
+                <option value="">Pilih Satuan</option>
+                {units.map((unit) => (
+                  <option key={unit.unit_id} value={unit.unit_id}>
+                    {unit.unit_name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.unit_id && <p className="text-sm text-red-600 mt-1">{formErrors.unit_id}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Alias</label>
+              <Input
+                placeholder="Alias"
+                value={formData.alias}
+                onChange={(e) => {
+                  setFormData({ ...formData, alias: e.target.value });
+                }}
+                aria-label="Alias"
+              />
+            </div>
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Expired Date</label>
+              <Input
+                type="date"
+                value={formData.expired_date}
+                onChange={(e) => setFormData({ ...formData, expired_date: e.target.value })}
+                aria-label="Tanggal kedaluwarsa"
+              />
+              {formErrors.expired_date && <p className="text-sm text-red-600 mt-1">{formErrors.expired_date}</p>}
+            </div>
+          </div>
+
+          <div>
+            <textarea
+              placeholder="Deskripsi"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              rows={2}
+              aria-label="Deskripsi produk"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <textarea
+              placeholder="Bahan aktif"
+              value={formData.ingredient}
+              onChange={(e) => setFormData({ ...formData, ingredient: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              rows={2}
+              aria-label="Bahan aktif"
+            />
+            <textarea
+              placeholder="Dosis"
+              value={formData.dosage}
+              onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              rows={2}
+              aria-label="Dosis"
+            />
+          </div>
+
+          <div>
+            <textarea
+              placeholder="Efek samping"
+              value={formData.side_affection}
+              onChange={(e) => setFormData({ ...formData, side_affection: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              rows={2}
+              aria-label="Efek samping"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Beli</label>
+              <Input
+                type="number"
+                className="text-right"
+                placeholder="Beli"
+                value={String(formData.purchase_price)}
+                onChange={(e) => {
+                  setFormData({ ...formData, purchase_price: Number(e.target.value) });
+                  if (formErrors.purchase_price) setFormErrors({ ...formErrors, purchase_price: undefined });
+                }}
+                aria-label="Harga beli"
+              />
+              {formErrors.purchase_price && <p className="text-sm text-red-600 mt-1">{formErrors.purchase_price}</p>}
+            </div>
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Jual</label>
+              <Input
+                type="number"
+                className="text-right"
+                placeholder="Jual"
+                value={String(formData.sales_price)}
+                onChange={(e) => {
+                  setFormData({ ...formData, sales_price: Number(e.target.value) });
+                  if (formErrors.sales_price) setFormErrors({ ...formErrors, sales_price: undefined });
+                }}
+                aria-label="Harga jual"
+              />
+              {formErrors.sales_price && <p className="text-sm text-red-600 mt-1">{formErrors.sales_price}</p>}
+            </div>
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Harga Alternatif</label>
+              <Input
+                type="number"
+                className="text-right"
+                placeholder="Harga Alternatif"
+                value={String(formData.alternate_price)}
+                onChange={(e) => setFormData({ ...formData, alternate_price: Number(e.target.value) })}
+                aria-label="Harga alternatif"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeEditProduct}>Batal</Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className={editingProduct ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-green-600 hover:bg-green-700 text-white'}
+            >
+              {editingProduct ? 'Simpan' : 'Tambahkan'}
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* Pagination */}

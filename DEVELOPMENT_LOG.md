@@ -798,6 +798,37 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
    - `src/features/unit-conversions/hooks/useUnitConversions.ts` — Custom hook untuk data state & loading
    - `src/features/unit-conversions/pages/unit-conversions-page.tsx` — Full UI component (~480 lines)
 
+   ---
+
+   ### 12. Produk — Penyesuaian Modal & Skema Detail Produk
+   **Tanggal**: 2026-07-06
+   **File Utama**:
+   - `src/features/products/pages/products-page.tsx`
+   - `src/features/products/api/products-api.ts`
+   - `src/features/products/types/products.ts`
+
+   **Perubahan & Perbaikan**:
+   - Menambahkan dukungan field detail produk lengkap: `alias`, `description`, `ingredient`, `dosage`, `side_affection`, `alternate_price`, `expired_date` pada form modal dan payload create/update.
+   - Menghapus kemampuan mengedit `stock` dari modal produk (stok hanya tampil di daftar/riwayat transaksi, tidak bisa diubah dari master product).
+   - Memperlebar modal (`size="xl"`) dan merombak tata letak form agar lebih horizontal (mengurangi panjang vertikal). Textarea dikurangi tinggi (`rows={2}`) untuk mengurangi kebutuhan scroll di modal.
+   - Menambahkan label `Alias` agar sejajar dengan `Expired Date` secara visual.
+   - Menyelaraskan `CreateProductPayload` / `UpdateProductPayload` di API tanpa `stock` agar sesuai business rule.
+
+   **File yang diubah**:
+   - `src/features/products/pages/products-page.tsx` — Form modal diatur ulang: fields baru ditambahkan, `stock` dihapus dari modal, label dan layout diperbaiki, textarea dikurangi tinggi.
+   - `src/features/products/api/products-api.ts` — Payload `CreateProductPayload` / `UpdateProductPayload` diperbarui sesuai schema produk backend (tanpa `stock`).
+   - `src/features/products/types/products.ts` — Tipe `Product` sudah memuat field detail lengkap.
+
+   **Dampak**:
+   - UI modal lebih ringkas dan melebar, tidak lagi menutupi banyak ruang vertikal pada halaman.
+   - Data product create/update sekarang mengirim field detail lengkap, namun stok tetap diurus oleh proses transaksi/stock management.
+
+   **Catatan**:
+   - Pastikan backend menerima `expired_date` dalam format `YYYY-MM-DD` atau sesuai kontrak API.
+   - Jika perlu menampilkan stok saat edit, sediakan view-only field di modal atau link ke riwayat stok.
+
+   ---
+
 2. **Type Definitions**:
    - `UnitConversion`: id, product_id, product_name, from_unit_id, from_unit_name, to_unit_id, to_unit_name, conversion_value
    - `ProductCombo`: id, nama/name
