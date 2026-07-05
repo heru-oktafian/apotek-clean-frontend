@@ -2107,7 +2107,6 @@ code {
 .units-page__table-wrapper td {
   padding: 0.3rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  text-align: center;
 }
 
 .units-page__table-wrapper th:first-child,
@@ -2125,7 +2124,6 @@ code {
 .units-page__table-wrapper th {
   color: var(--text-muted);
   font-weight: 600;
-  text-align: center;
   letter-spacing: 0.02em;
 }
 
@@ -2450,7 +2448,6 @@ code {
 .members-page__table-wrapper td {
   padding: 0.3rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  text-align: center;
 }
 
 .members-page__table-wrapper th:first-child,
@@ -2462,7 +2459,6 @@ code {
 .members-page__table-wrapper th {
   color: var(--text-muted);
   font-weight: 600;
-  text-align: center;
   letter-spacing: 0.02em;
 }
 
@@ -2790,7 +2786,6 @@ code {
 .suppliers-page__table-wrapper td {
   padding: 0.3rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  text-align: center;
 }
 
 .suppliers-page__table-wrapper th:first-child,
@@ -2802,7 +2797,6 @@ code {
 .suppliers-page__table-wrapper th {
   color: var(--text-muted);
   font-weight: 600;
-  text-align: center;
   letter-spacing: 0.02em;
 }
 
@@ -3169,7 +3163,6 @@ code {
 .products-page__table-wrapper td {
   padding: 0.3rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  text-align: center;
 }
 
 .products-page__table-wrapper th:first-child,
@@ -3181,7 +3174,6 @@ code {
 .products-page__table-wrapper th {
   color: var(--text-muted);
   font-weight: 600;
-  text-align: center;
   letter-spacing: 0.02em;
 }
 

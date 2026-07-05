@@ -254,6 +254,7 @@ export function SuppliersPage() {
       key: 'name',
       header: 'Nama',
       render: (row) => row.name,
+      align: 'left',
     },
     {
       key: 'phone',
@@ -264,11 +265,13 @@ export function SuppliersPage() {
       key: 'address',
       header: 'Alamat',
       render: (row) => row.address,
+      align: 'left',
     },
     {
       key: 'supplier_category',
       header: 'Kategori Supplier',
       render: (row) => row.supplier_category,
+      align: 'left',
     },
     {
       key: 'pic',
