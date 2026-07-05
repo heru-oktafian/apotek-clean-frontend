@@ -3,7 +3,7 @@ import { Edit2, Trash2, RefreshCw, Download, Search } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useUnits } from '../hooks/useUnits';
 import { createUnit, updateUnit, deleteUnit } from '../api/units-api';
-import { Modal, Button, Input, useToast } from '../../../components/ui';
+import { Modal, Button, Input, Pagination, useToast } from '../../../components/ui';
 import { Table, type TableColumn } from '../../../components/ui/Table';
 import { buildApiUrl } from '../../../lib/api/env';
 import type { Unit } from '../types/units';
@@ -125,19 +125,6 @@ export function UnitsPage() {
 
   const handleRefresh = () => {
     loadUnits(page, activeSearch);
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      loadUnits(page - 1, activeSearch);
-    }
-  };
-
-  const handleNextPage = () => {
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    if (page < totalPages) {
-      loadUnits(page + 1, activeSearch);
-    }
   };
 
   const downloadFile = async (path: string, defaultName: string) => {
@@ -375,31 +362,12 @@ export function UnitsPage() {
         </div>
       </Modal>
 
-      {/* Pagination Info & Controls */}
-      <div className="units-page__pagination">
-        <div className="units-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${startItem}-${endItem} dari ${total}`}
-        </div>
-        <div className="units-page__pagination-controls">
-          <button
-            className="units-page__pagination-btn"
-            onClick={handlePreviousPage}
-            disabled={page === 1}
-            title="Halaman sebelumnya"
-          >
-            ←
-          </button>
-          <span className="units-page__pagination-number">{page}</span>
-          <button
-            className="units-page__pagination-btn"
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-            title="Halaman berikutnya"
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(nextPage) => loadUnits(nextPage, activeSearch)}
+      />
     </div>
   );
 }

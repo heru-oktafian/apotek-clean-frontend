@@ -321,6 +321,41 @@ Tujuan: Floating button hanya ada di dashboard, dan tidak mengganggu drawer menu
 
 ---
 
+### 9. Perbaikan Build, Struktur `categories`, dan Unit Conversions
+**Tanggal**: 2026-07-05
+**File Utama**:
+- `src/features/categories/api/categories-api.ts`
+- `src/features/categories/hooks/useCategories.ts`
+- `src/features/categories/pages/categories-page.tsx`
+- `src/features/categories/types/categories.ts`
+- `src/features/unit-conversions/api/unit-conversions-api.ts`
+- `src/features/unit-conversions/pages/unit-conversions-page.tsx`
+- `src/features/unit-conversions/types/unit-conversions.ts`
+- `src/features/dashboard/api/dashboard-api.ts`
+- `src/features/dashboard/types/dashboard.ts`
+- `src/features/retur-penjualan/pages/retur-penjualan-page.tsx`
+- `src/features/units/api/units-api.ts`
+- `src/components/ui/Pagination.tsx`
+
+**Perubahan**:
+- Memindahkan logika API kategori produk ke folder feature yang konsisten (`api/`, `hooks/`, `pages/`, `types/`).
+- Menyelaraskan `useCategories` dengan layer API baru dan memperbaiki penggunaan tipe `Category`.
+- Memperbaiki tipe payload dan request body untuk `unit-conversions`, agar backend `init_id`/`final_id` dan `value_conv` didukung.
+- Menambahkan alias properti `init_id`, `final_id`, `value_conv`, dan `value_conv` dalam tipe `UnitConversion` untuk mendukung response shape variatif.
+- Memperbaiki error build Vite di `dashboard-api.ts` dengan menambahkan tipe `ProfitTodayByUserItem` dan memperjelas tipe parameter `item`.
+- Memperbaiki dependency `useMemo` di `retur-penjualan-page.tsx` dari `[query, returns]` menjadi `[searchQuery, returns]`.
+- Menambahkan impor tipe `Unit` di `src/features/units/api/units-api.ts` untuk `createUnit` / `updateUnit`.
+- Menambahkan komponen `Pagination` di `src/components/ui/Pagination.tsx` untuk shared pagination.
+
+**Dampak**:
+- Struktur fitur `categories` sekarang konsisten dengan feature-based architecture.
+- Request `unit-conversions` tidak lagi error karena mismatch tipe body API.
+- Build penuh `npm run build` berhasil; hanya muncul warning bundle size Vite, bukan error.
+- Repo lebih stabil untuk perubahan lanjutan karena tipe API dan halaman sudah sinkron.
+
+
+---
+
 ### 9. Perbaikan Fitur Master → Konversi Satuan (Unit Conversions)
 **Tanggal**: 2026-07-03
 **File Utama**:

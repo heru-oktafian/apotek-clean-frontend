@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Edit2, Trash2, RefreshCw, Search, Plus, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useProducts } from '../hooks/useProducts';
@@ -29,6 +29,45 @@ export function ProductsPage() {
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
 
   const { products, total, page, perPage, isLoading, loadProducts } = useProducts();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const [pageInput, setPageInput] = useState(String(page));
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || /^[0-9]*$/.test(value)) {
+      setPageInput(value);
+    }
+  };
+
+  const commitPageInput = () => {
+    if (!pageInput) {
+      setPageInput(String(page));
+      return;
+    }
+
+    const requestedPage = Number(pageInput);
+    if (Number.isNaN(requestedPage)) {
+      setPageInput(String(page));
+      return;
+    }
+
+    const nextPage = Math.min(Math.max(requestedPage, 1), totalPages);
+    if (nextPage !== page) {
+      loadProducts(nextPage, activeSearch);
+    } else {
+      setPageInput(String(page));
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      commitPageInput();
+    }
+  };
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -65,7 +104,6 @@ export function ProductsPage() {
   };
 
   const handleNextPage = () => {
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
     if (page < totalPages) {
       loadProducts(page + 1, activeSearch);
     }
@@ -249,7 +287,6 @@ export function ProductsPage() {
     },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
   const startItem = total === 0 ? 0 : (page - 1) * perPage + 1;
   const endItem = total === 0 ? 0 : Math.min(page * perPage, total);
 
@@ -419,7 +456,17 @@ export function ProductsPage() {
           >
             ←
           </button>
-          <span className="products-page__pagination-number">{page}</span>
+          <Input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={pageInput}
+            onChange={handlePageInputChange}
+            onBlur={commitPageInput}
+            onKeyDown={handlePageInputKeyDown}
+            className="products-page__pagination-input"
+            aria-label="Halaman"
+          />
           <button
             className="products-page__pagination-btn"
             onClick={handleNextPage}

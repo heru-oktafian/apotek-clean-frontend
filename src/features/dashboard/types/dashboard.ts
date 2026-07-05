@@ -52,6 +52,11 @@ export interface MonthlyChartItem {
   total_sales: number;  // Omset
   profit_estimate: number; // Profit
   label?: string;       // computed: "02"
+  date?: string;
+  day?: string;
+  sales?: number;
+  total?: number;
+  profit_amount?: number;
   omset?: number;       // alias for total_sales
   profit?: number;      // alias for profit_estimate
 }

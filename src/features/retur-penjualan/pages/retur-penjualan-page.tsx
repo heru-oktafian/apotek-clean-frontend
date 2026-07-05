@@ -26,7 +26,7 @@ export function ReturPenjualanPage() {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return returns;
     return returns.filter((item) => [item.nomor, item.pelanggan, item.status].some((value) => value.toLowerCase().includes(query)));
-  }, [query, returns]);
+  }, [searchQuery, returns]);
 
   const columns: TableColumn<ReturItem>[] = [
     { key: 'nomor', header: 'Nomor' },

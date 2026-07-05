@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Edit2, Trash2, RefreshCw, Search, Download, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
+import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import { useSupplierCategories } from '../hooks/useSupplierCategories';
 import { buildApiUrl } from '../../../lib/api/env';
 import type { SupplierCategory } from '../types/supplier-categories';
@@ -152,6 +152,11 @@ export function SupplierCategoriesPage() {
     toast.addToast('Data kategori supplier disegarkan.', 'success');
   };
 
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    void loadSupplierCategories(nextPage, activeSearch);
+  };
+
   const downloadFile = async (path: string, defaultName: string) => {
     if (!activeToken) {
       toast.addToast('Token tidak tersedia, login ulang.', 'error');
@@ -280,16 +285,13 @@ export function SupplierCategoriesPage() {
         </div>
       </Modal>
 
-      <div className="units-page__pagination">
-        <div className="units-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min((page - 1) * perPage + 1, total)}-${Math.min(page * perPage, total)} dari ${total}`}
-        </div>
-        <div className="units-page__pagination-controls">
-          <button className="units-page__pagination-btn" onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1}>←</button>
-          <span className="units-page__pagination-number">{page}</span>
-          <button className="units-page__pagination-btn" onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page >= totalPages}>→</button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={handlePageChange}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 }

@@ -10,7 +10,12 @@ export interface UnitConversion {
   from_unit_name?: string;
   to_unit_id?: string | number;
   to_unit_name?: string;
+  init_id?: string | number;
+  initId?: string | number;
+  final_id?: string | number;
+  finalId?: string | number;
   conversion_value?: number | string;
+  value_conv?: number | string;
   created_at?: string;
   updated_at?: string;
 }

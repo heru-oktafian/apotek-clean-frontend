@@ -33,14 +33,16 @@ export const fetchUnitConversions = async (token: string, params?: UnitConversio
 
 // ── Create Unit Conversion ───────────────────────────────────────────────────
 // POST /api/unit-conversions
+export type UnitConversionPayload = {
+  product_id: number | string;
+  init_id: number | string;
+  final_id: number | string;
+  value_conv: number | string;
+};
+
 export const createUnitConversion = async (
   token: string,
-  body: {
-    product_id: number | string;
-    from_unit_id: number | string;
-    to_unit_id: number | string;
-    conversion_value: number | string;
-  }
+  body: UnitConversionPayload
 ) => {
   const url = '/api/unit-conversions';
   const res = await apiRequest<UnitConversion>(url, { token, method: 'POST', body });
@@ -52,12 +54,7 @@ export const createUnitConversion = async (
 export const updateUnitConversion = async (
   token: string,
   id: string | number,
-  body: {
-    product_id: number | string;
-    from_unit_id: number | string;
-    to_unit_id: number | string;
-    conversion_value: number | string;
-  }
+  body: UnitConversionPayload
 ) => {
   const url = `/api/unit-conversions/${id}`;
   const res = await apiRequest<UnitConversion>(url, { token, method: 'PUT', body });

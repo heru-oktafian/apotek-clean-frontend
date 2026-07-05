@@ -7,6 +7,9 @@ export type { InputProps } from './Input';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
+
 export { Select } from './Select';
 export type { SelectProps } from './Select';
 

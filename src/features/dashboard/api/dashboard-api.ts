@@ -6,6 +6,7 @@ import type {
   ProductSummary,
   MonthlyChartItem,
   ProfitTodayByUserData,
+  ProfitTodayByUserItem,
   PurchaseRecord,
   SaleRecord,
 } from '../types/dashboard';
@@ -127,7 +128,7 @@ export const fetchProfitTodayByUser = async (token: string) => {
 
   result.items = itemsSource
     .map(normalizeItem)
-    .filter((item): item is ProfitTodayByUserItem => item !== null && item.user_name !== '');
+    .filter((item: ProfitTodayByUserItem | null): item is ProfitTodayByUserItem => item !== null && item.user_name !== '');
 
   const itemTotalTransactions = result.items.reduce((sum, item) => sum + (item.transactions || 0), 0);
   const itemWeightedAbv = result.items.reduce(
