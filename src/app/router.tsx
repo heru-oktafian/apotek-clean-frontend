@@ -21,6 +21,7 @@ import { CategoriesPage } from '../features/categories/pages/categories-page'
 import { MemberCategoriesPage } from '../features/member-categories/pages/member-categories-page'
 import { SupplierCategoriesPage } from '../features/suppliers/pages/supplier-categories-page'
 import { SuppliersPage } from '../features/suppliers/pages/suppliers-page'
+import { ProductsPage } from '../features/products/pages/products-page'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -113,7 +114,7 @@ export function AppRouter() {
             <Route path="/master/unit-conversions" element={<UnitConversionsPage />} />
             <Route path="/master/supplier-categories" element={<SupplierCategoriesPage />} />
             <Route path="/master/suppliers" element={<SuppliersPage />} />
-            <Route path="/master/products" element={<PagePlaceholder title="Produk" description="Halaman produk akan menjadi salah satu prioritas utama karena sudah punya list, detail, export, dan label." />} />
+            <Route path="/master/products" element={<ProductsPage />} />
             <Route path="/transactions/purchases" element={<PagePlaceholder title="Pembelian" description="Halaman pembelian akan fokus dulu pada list, filter bulan, detail, dan export." />} />
             <Route path="/transactions/sales" element={<PagePlaceholder title="Penjualan" description="Halaman penjualan akan memakai list berpaging, filter bulan, detail, dan item transaksi." />} />
             <Route path="/transactions/duplicate-receipts" element={<PagePlaceholder title="Duplicate Receipt" description="Halaman ini tetap diperlakukan sebagai domain transaksi terpisah dari sale." />} />
