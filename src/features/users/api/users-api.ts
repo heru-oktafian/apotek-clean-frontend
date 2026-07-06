@@ -129,3 +129,18 @@ export async function removeUserBranchAccess(token: string, userId: string, acce
   const currentAccess = dummyBranchAccess[userId] ?? []
   dummyBranchAccess[userId] = currentAccess.filter((item) => item.id !== accessId)
 }
+
+export async function updateUser(token: string, userId: string, payload: Partial<User>): Promise<User> {
+  await delay(200)
+
+  const idx = dummyUsers.findIndex((u) => u.id === userId)
+  if (idx === -1) throw new Error('User tidak ditemukan')
+
+  const updated: User = {
+    ...dummyUsers[idx],
+    ...payload,
+  }
+
+  dummyUsers[idx] = updated
+  return updated
+}
