@@ -11,11 +11,17 @@ interface TableProps<T = unknown> {
   columns: TableColumn<T>[];
   data: T[];
   emptyText?: string;
+  className?: string;
 }
 
-export function Table<T = unknown>({ columns, data, emptyText = 'Tidak ada data' }: TableProps<T>) {
+export function Table<T = unknown>({
+  columns,
+  data,
+  emptyText = 'Tidak ada data',
+  className = '',
+}: TableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className={`overflow-x-auto rounded-xl border border-slate-200 ${className}`.trim()}>
       <table className="w-full">
         <thead className="bg-slate-50 border-b border-slate-200">
           <tr>

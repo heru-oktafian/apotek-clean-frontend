@@ -1213,7 +1213,7 @@ code {
 }
 .page-card {
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 16px;
   padding: 1.5rem;
   margin: 1rem;

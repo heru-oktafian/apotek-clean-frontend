@@ -22,6 +22,8 @@ import { MemberCategoriesPage } from '../features/member-categories/pages/member
 import { SupplierCategoriesPage } from '../features/suppliers/pages/supplier-categories-page'
 import { SuppliersPage } from '../features/suppliers/pages/suppliers-page'
 import { ProductsPage } from '../features/products/pages/products-page'
+import { UsersPage } from '../features/users/pages/users-page'
+import { UserEditPage } from '../features/users/pages/user-edit-page'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -124,7 +126,8 @@ export function AppRouter() {
             <Route path="/transactions/another-incomes" element={<PagePlaceholder title="Pendapatan Lain" description="Halaman pendapatan lain akan mengikuti pola transaksi ringan backend aktif." />} />
             <Route path="/transactions/first-stocks" element={<PagePlaceholder title="First Stock" description="Halaman first stock akan mendukung list, detail item, dan workflow stok bertahap." />} />
             <Route path="/reports/daily-assets" element={<PagePlaceholder title="Daily Assets" description="Halaman daily assets akan memakai response pagination nested dari backend aktif." />} />
-            <Route path="/system/users" element={<PagePlaceholder title="Users" description="Halaman user memakai bentuk pagination custom top-level, jadi akan dibuat adapter khusus." />} />
+            <Route path="/system/users" element={<UsersPage />} />
+            <Route path="/system/users/:userId" element={<UserEditPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
