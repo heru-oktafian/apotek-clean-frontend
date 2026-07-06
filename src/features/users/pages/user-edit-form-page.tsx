@@ -105,7 +105,7 @@ export function UserEditFormPage() {
           <Button variant="secondary" onClick={() => navigate(`/system/users/${userId}`)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 text-white hover:bg-emerald-700">
             {saving ? 'Menyimpan...' : 'Simpan'}
           </Button>
         </div>
