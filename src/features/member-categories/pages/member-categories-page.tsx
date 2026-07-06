@@ -338,7 +338,7 @@ export function MemberCategoriesPage() {
         </div>
       </Modal>
 
-      <Pagination page={page} total={total} perPage={perPage} onPageChange={handlePageChange} onRefresh={handleRefresh} />
+      <Pagination page={page} total={total} perPage={perPage} onPageChange={handlePageChange} />
     </div>
   );
 }

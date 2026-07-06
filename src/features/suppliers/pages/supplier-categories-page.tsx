@@ -290,7 +290,6 @@ export function SupplierCategoriesPage() {
         total={total}
         perPage={perPage}
         onPageChange={handlePageChange}
-        onRefresh={handleRefresh}
       />
     </div>
   );
