@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/auth-context'
-import { useToast, Table, type TableColumn } from '../../../components/ui'
+import { useToast, Table, Button, type TableColumn } from '../../../components/ui'
 import { fetchUserBranchAccess, fetchUserById, removeUserBranchAccess } from '../api/users-api'
 import type { User, UserBranchAccess } from '../types/users'
 
@@ -70,16 +70,11 @@ export function UserEditPage() {
       header: 'Aksi',
       align: 'center',
       render: (row) => (
-        <button
-          type="button"
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-          onClick={() => handleRemoveAccess(row.id)}
-        >
-          <Trash2 size={14} />
-          Hapus
-        </button>
-      ),
+          <Button variant="danger" size="sm" onClick={() => handleRemoveAccess(row.id)} disabled={saving}>
+            <Trash2 size={14} />
+            <span>Hapus</span>
+          </Button>
+        ),
     },
   ]
 
@@ -103,23 +98,15 @@ export function UserEditPage() {
             </div>
 
             <div className="mt-4 text-left">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded bg-yellow-400 text-black px-4 py-2 hover:bg-yellow-500"
-                    onClick={() => navigate('/system/users')}
-                  >
-                    Kembali
-                  </button>
+                      <div className="mt-4 flex items-center gap-3">
+                        <Button variant="secondary" onClick={() => navigate('/system/users')} disabled={saving}>
+                          Kembali
+                        </Button>
 
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
-                    onClick={() => navigate(`/system/users/${userId}/edit`)}
-                  >
-                    Update
-                  </button>
-                </div>
+                        <Button onClick={() => navigate(`/system/users/${userId}/edit`)} disabled={saving} className="bg-emerald-600 text-white hover:bg-emerald-700">
+                          Update
+                        </Button>
+                      </div>
             </div>
           </div>
 
