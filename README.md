@@ -90,3 +90,71 @@ Work in progress / next:
 
 _Catatan_: README ini diupdate otomatis sesuai progres frontend per 2026-07-06. Untuk penjelasan teknis lebih lanjut lihat `DEVELOPMENT_LOG.md`.
 
+---
+
+## 📁 Repository Structure (high-level)
+
+Below is a concise hierarchy of the repository focusing on folders and important files to help you quickly orient in the codebase.
+
+```
+/
+├─ README.md
+├─ DEVELOPMENT_LOG.md
+├─ package.json
+├─ vite.config.ts
+├─ tsconfig.json
+├─ public/
+├─ docs/
+│  ├─ api-mapping/
+│  └─ ui-reference/
+└─ src/
+	├─ main.tsx
+	├─ index.css
+	├─ app/
+	│  └─ router.tsx
+	├─ components/
+	│  ├─ layout/
+	│  │  ├─ dashboard-topbar.tsx
+	│  │  ├─ app-sidebar.tsx
+	│  │  └─ mobile-bottom-bar.tsx
+	│  ├─ ui/
+	│  │  ├─ Button.tsx
+	│  │  ├─ Input.tsx
+	│  │  ├─ Select.tsx
+	│  │  ├─ Table.tsx
+	│  │  └─ Toast.tsx
+	│  └─ common/
+	│     ├─ global-error-boundary.tsx
+	│     └─ page-placeholder.tsx
+	├─ features/
+	│  ├─ auth/
+	│  │  ├─ api.ts
+	│  │  ├─ auth-context.tsx
+	│  │  └─ pages/
+	│  │     └─ login-page.tsx
+	│  ├─ users/
+	│  │  ├─ api/
+	│  │  │  └─ users-api.ts
+	│  │  ├─ hooks/
+	│  │  │  └─ useUsers.ts
+	│  │  ├─ pages/
+	│  │  │  ├─ users-page.tsx
+	│  │  │  ├─ user-edit-page.tsx
+	│  │  │  └─ user-edit-form-page.tsx
+	│  │  └─ types/
+	│  │     └─ users.ts
+	│  ├─ products/
+	│  ├─ categories/
+	│  └─ dashboard/
+	├─ lib/
+	│  ├─ api/
+	│  │  └─ client.ts
+	│  └─ auth/
+	│     └─ storage.ts
+	└─ services/
+		└─ api.js
+
+```
+
+If you want a more detailed tree (including less-critical files), tell me and I will append it.
+
