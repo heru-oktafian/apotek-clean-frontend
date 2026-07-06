@@ -99,11 +99,11 @@ export function UserEditPage() {
 
             <div className="mt-4 text-left">
                       <div className="mt-4 flex items-center gap-3">
-                        <Button variant="secondary" onClick={() => navigate('/system/users')} disabled={saving}>
+                        <Button onClick={() => navigate('/system/users')} disabled={saving} className="bg-yellow-400 text-black hover:bg-yellow-500">
                           Kembali
                         </Button>
 
-                        <Button onClick={() => navigate(`/system/users/${userId}/edit`)} disabled={saving} className="bg-emerald-600 text-white hover:bg-emerald-700">
+                        <Button variant="primary" onClick={() => navigate(`/system/users/${userId}/edit`)} disabled={saving}>
                           Update
                         </Button>
                       </div>
