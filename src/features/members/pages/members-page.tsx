@@ -461,7 +461,6 @@ export function MembersPage() {
         total={total}
         perPage={perPage}
         onPageChange={handlePageChange}
-        onRefresh={handleRefresh}
       />
     </div>
   );
