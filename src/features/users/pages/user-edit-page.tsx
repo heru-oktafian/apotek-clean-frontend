@@ -133,6 +133,17 @@ export function UserEditPage() {
         ) : null}
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <hr className="border-t border-slate-200 mb-3" />
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded bg-sky-300 text-white hover:bg-sky-400"
+              onClick={() => toast.addToast('Fungsi Tambah Akses Branch belum tersedia.', 'info')}
+            >
+              Tambah Akses Branch
+            </button>
+          </div>
+
           <Table
             columns={columns}
             data={branchAccess}
