@@ -24,6 +24,7 @@ import { SuppliersPage } from '../features/suppliers/pages/suppliers-page'
 import { ProductsPage } from '../features/products/pages/products-page'
 import { UsersPage } from '../features/users/pages/users-page'
 import { UserEditPage } from '../features/users/pages/user-edit-page'
+import { UserEditFormPage } from '../features/users/pages/user-edit-form-page'
 
 function AuthGate() {
   const { activeToken, preBranchToken } = useAuth()
@@ -128,6 +129,7 @@ export function AppRouter() {
             <Route path="/reports/daily-assets" element={<PagePlaceholder title="Daily Assets" description="Halaman daily assets akan memakai response pagination nested dari backend aktif." />} />
             <Route path="/system/users" element={<UsersPage />} />
             <Route path="/system/users/:userId" element={<UserEditPage />} />
+            <Route path="/system/users/:userId/edit" element={<UserEditFormPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
