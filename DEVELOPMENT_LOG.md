@@ -5,6 +5,26 @@ Aplikasi React + TypeScript + Vite untuk POS Apotek dengan fokus pada UI respons
 
 ---
 
+### 11. User Edit Page — Header & Breadcrumb Rework
+**Tanggal**: 2026-07-06
+**File Utama**:
+- `src/components/layout/dashboard-topbar.tsx`
+- `src/features/users/pages/user-edit-page.tsx`
+- `src/components/ui/Table.tsx`
+
+**Perubahan**:
+- Breadcrumb untuk route detail user (`/system/users/:userId`) disesuaikan agar menampilkan `Users → Otoritas` sehingga header menjadi `Ziida Farma → Users → Otoritas`.
+- Mengganti area header pada halaman detail user: menghapus judul besar dan breadcrumb duplikat, menggantinya dengan kartu ringkas berisi informasi pokok user (Username, Nama, Role, Status) dan placeholder avatar.
+- Menambahkan tombol `Kembali` (kuning) di sebelah kiri tombol `Update` (hijau). Tombol `Kembali` navigasi ke `User Manage >> Users` (`/system/users`). Tombol `Update` mengarahkan ke `/system/users/:userId/edit` (tempat form edit terpisah).
+- Merapikan tampilan tabel akses branch: menambahkan prop `className` pada `Table` untuk dapat menghilangkan border wrapper pada kasus ini.
+- Penyesuaian alignment: grid informasi user dibuat left-aligned (`items-start text-left`) agar sesuai dengan desain referensi.
+
+**Dampak**:
+- UI detail user kini lebih ringkas dan sesuai referensi desain (informasi pokok + foto + aksi utama).
+- Breadcrumb header konsisten untuk route detail user.
+- Perubahan tidak mengubah perilaku backend; semuanya UI/UX dan navigasi.
+
+
 ## Perubahan Teknis (Kronologi)
 
 ### 0. Penyesuaian UI Master Kategori Berdasarkan Response Endpoint

@@ -1,6 +1,6 @@
 import { apiRequest } from '../../../lib/api/client';
 import { buildApiUrl } from '../../../lib/api/env';
-import type { ProductCategory, Unit, ComboResponse, ProductsListResponse } from '../types/products';
+import type { ProductCategory, Product, Unit, ComboResponse, ProductsListResponse } from '../types/products';
 
 /**
  * Fetch product categories combo for dropdown

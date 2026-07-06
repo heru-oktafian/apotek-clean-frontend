@@ -52,6 +52,9 @@ const pageTitles: Record<string, string> = {
 
 function getPageTitle(pathname: string) {
   if (pageTitles[pathname]) return pageTitles[pathname]
+  // If the path is a user detail (e.g. /system/users/123), show Users → Otoritas
+  if (/^\/system\/users\/[^\/]+$/.test(pathname)) return 'Users → Otoritas'
+  if (pathname.startsWith('/system/users/')) return 'Users'
   const segments = pathname.split('/').filter(Boolean)
   if (!segments.length) return 'Dashboard'
   return segments
