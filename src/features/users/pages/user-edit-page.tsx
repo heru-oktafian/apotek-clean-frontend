@@ -103,9 +103,14 @@ export function UserEditPage() {
                           Kembali
                         </Button>
 
-                        <Button variant="primary" onClick={() => navigate(`/system/users/${userId}/edit`)} disabled={saving}>
+                        <button
+                          type="button"
+                          className="units-page__btn-tambah"
+                          onClick={() => navigate(`/system/users/${userId}/edit`)}
+                          disabled={saving}
+                        >
                           Update
-                        </Button>
+                        </button>
                       </div>
             </div>
           </div>
