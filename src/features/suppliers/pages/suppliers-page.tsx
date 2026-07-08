@@ -77,7 +77,6 @@ export function SuppliersPage() {
           branchId: cat.branchId ?? cat.branch_id ?? undefined,
         }));
         
-        console.log('Supplier categories loaded:', categories, 'from response:', payload);
         setSupplierCategories(categories);
       } catch (err) {
         console.error('Error loading supplier categories:', err);
@@ -133,7 +132,6 @@ export function SuppliersPage() {
   };
 
   const openEditSupplier = (supplier: Supplier) => {
-    console.log('Opening edit supplier:', supplier);
     setEditingSupplier(supplier);
     setFormData({
       name: supplier.name,

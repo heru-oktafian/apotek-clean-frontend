@@ -3716,3 +3716,252 @@ code {
   }
 }
 
+
+/* ── ListTablePage Template ──────────────────────────────── */
+.list-table-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem;
+  background: var(--bg);
+}
+
+.list-table-page__header {
+  margin-bottom: 0.5rem;
+}
+
+.list-table-page__breadcrumb {
+  font-size: 0.75rem;
+  color: var(--text-s);
+  margin: 0 0 0.25rem 0;
+}
+
+.list-table-page__subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+/* ── Toolbar ────────────────────────────────────────────── */
+.list-table-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.list-table-page__toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.list-table-page__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.list-table-page__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.list-table-page__btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.list-table-page__btn--primary:hover {
+  opacity: 0.9;
+}
+
+.list-table-page__btn--secondary {
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+}
+
+.list-table-page__btn--secondary:hover {
+  background: var(--border);
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.list-table-page__table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.list-table-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.list-table-page__th {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-h);
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.list-table-page__th--checkbox,
+.list-table-page__td--checkbox {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.list-table-page__td {
+  padding: 0.55rem 0.75rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.list-table-page__td--actions {
+  white-space: nowrap;
+}
+
+.list-table-page__td--loading,
+.list-table-page__td--empty {
+  text-align: center;
+  color: var(--text-s);
+  padding: 2rem;
+}
+
+.list-table-page__tr:hover {
+  background: var(--bg-hover);
+}
+
+.list-table-page__tr--selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* ── Action Buttons ──────────────────────────────────────── */
+.list-table-page__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.55rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.list-table-page__action-btn + .list-table-page__action-btn {
+  margin-left: 0.35rem;
+}
+
+.list-table-page__action-btn--edit {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.list-table-page__action-btn--edit:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.list-table-page__action-btn--delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.list-table-page__action-btn--delete:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* ── Pagination ──────────────────────────────────────────── */
+.list-table-page__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.list-table-page__pagination-info {
+  font-size: 0.78rem;
+  color: var(--text-s);
+}
+
+.list-table-page__pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.list-table-page__pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.list-table-page__pagination-btn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.list-table-page__pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.list-table-page__pagination-form {
+  display: flex;
+  align-items: center;
+}
+
+.list-table-page__pagination-input {
+  width: 3rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-h);
+  background: var(--bg);
+  font-family: inherit;
+}
+
+.list-table-page__pagination-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}

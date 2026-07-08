@@ -110,6 +110,7 @@ export function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/sale-pos" element={<SalePosPage />} />
             <Route path="/retur-penjualan" element={<ReturPenjualanPage />} />
+            <Route path="/supplier" element={<Navigate to="/master/suppliers" replace />} />
             <Route path="/membership/member-categories" element={<MemberCategoriesPage />} />
             <Route path="/membership/members" element={<MembersPage />} />
             <Route path="/master/product-categories" element={<CategoriesPage />} />
