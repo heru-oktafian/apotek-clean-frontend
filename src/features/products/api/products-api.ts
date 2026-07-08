@@ -111,6 +111,13 @@ export async function updateProduct(
  * @param productId Product ID
  * @param quantity Quantity of labels
  */
+export async function deleteProduct(token: string, id: string) {
+  return apiRequest<void>(`/api/products/${id}`, {
+    token,
+    method: 'DELETE',
+  });
+}
+
 export async function downloadProductLabel(
   token: string,
   productId: string,

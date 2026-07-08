@@ -11,7 +11,7 @@ import {
   downloadProductsPDF,
   updateProduct,
 } from '../api/products-api';
-import { useToast, Table, Modal, Button, Input, type TableColumn } from '../../../components/ui';
+import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import type { Product, ProductCategory, Unit } from '../types/products';
 
 interface ProductWithIndex extends Product {
@@ -36,7 +36,6 @@ interface ProductFormData {
 
 export function ProductsPage() {
   const { activeToken } = useAuth();
-  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   
@@ -160,18 +159,6 @@ export function ProductsPage() {
 
   const handleRefresh = () => {
     loadProducts(page, activeSearch);
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      loadProducts(page - 1, activeSearch);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      loadProducts(page + 1, activeSearch);
-    }
   };
 
   const resetForm = () => {
@@ -765,38 +752,15 @@ export function ProductsPage() {
       </Modal>
 
       {/* Pagination */}
-      <div className="products-page__pagination">
-        <div className="products-page__pagination-info">
-          {total === 0 ? 'Tidak ada data' : `Menampilkan ${startItem}-${endItem} dari ${total}`}
-        </div>
-        <div className="products-page__pagination-controls">
-          <button
-            className="products-page__pagination-btn"
-            onClick={handlePreviousPage}
-            disabled={page === 1}
-          >
-            ←
-          </button>
-          <Input
-            type="number"
-            min={1}
-            max={totalPages}
-            value={pageInput}
-            onChange={handlePageInputChange}
-            onBlur={commitPageInput}
-            onKeyDown={handlePageInputKeyDown}
-            className="products-page__pagination-input"
-            aria-label="Halaman"
-          />
-          <button
-            className="products-page__pagination-btn"
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-          >
-            →
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => loadProducts(p, activeSearch)}
+        onInputChange={handlePageInputChange}
+        onInputCommit={commitPageInput}
+        onInputKeyDown={handlePageInputKeyDown}
+        pageInput={pageInput}
+      />
     </div>
   );
 }
