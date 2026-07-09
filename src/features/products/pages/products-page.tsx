@@ -443,7 +443,6 @@ export function ProductsPage() {
           value={searchInput}
           onChange={handleSearchInputChange}
           onSearch={handleSearch}
-          onReset={handleReset}
           placeholder="Cari produk..."
           disabled={isLoading}
         />
