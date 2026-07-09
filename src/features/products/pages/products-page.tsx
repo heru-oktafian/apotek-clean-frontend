@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Search, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useProducts } from '../hooks/useProducts';
 import {
@@ -11,7 +11,9 @@ import {
   downloadProductsPDF,
   updateProduct,
 } from '../api/products-api';
-import { useToast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { useListSearch } from '../../../hooks/useListSearch';
 import type { Product, ProductCategory, Unit } from '../types/products';
 
 interface ProductWithIndex extends Product {
@@ -36,9 +38,12 @@ interface ProductFormData {
 
 export function ProductsPage() {
   const { activeToken } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
-  
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch, handleReset } = useListSearch({
+    onSearch: (_search) => loadProducts(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
+
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -133,30 +138,6 @@ export function ProductsPage() {
     }
   };
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-
-    const normalized = value.trim();
-    if (!normalized) {
-      setActiveSearch('');
-      loadProducts(1, '');
-      return;
-    }
-
-    if (normalized.length >= 3) {
-      setActiveSearch(normalized);
-      loadProducts(1, normalized);
-    }
-  };
-
-  const handleSearchSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const normalized = searchQuery.trim();
-    setActiveSearch(normalized);
-    loadProducts(1, normalized);
-  };
-
   const handleRefresh = () => {
     loadProducts(page, activeSearch);
   };
@@ -229,12 +210,12 @@ export function ProductsPage() {
     setIsDeleting(true);
     try {
       // TODO: Implement delete endpoint when available
-      toast.addToast('Fitur hapus produk akan diimplementasikan.', 'info');
+      toast.info('Fitur hapus produk akan diimplementasikan.');
       closeDeleteConfirm();
       loadProducts(1, activeSearch);
     } catch (error) {
       console.error(error);
-      toast.addToast('Gagal menghapus produk.', 'error');
+      toast.error('Gagal menghapus produk.');
     } finally {
       setIsDeleting(false);
     }
@@ -259,12 +240,12 @@ export function ProductsPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.addToast('Periksa kembali form produk.', 'error');
+      toast.error('Periksa kembali form produk.');
       return;
     }
 
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
@@ -273,33 +254,33 @@ export function ProductsPage() {
 
       if (editingProduct?.id) {
         await updateProduct(activeToken, editingProduct.id, payload);
-        toast.addToast('Produk berhasil diperbarui.', 'success');
+        toast.success('Produk berhasil diperbarui.');
       } else {
         await createProduct(activeToken, payload);
-        toast.addToast('Produk berhasil ditambahkan.', 'success');
+        toast.success('Produk berhasil ditambahkan.');
       }
 
       closeEditProduct();
       loadProducts(1, activeSearch);
     } catch (error) {
       console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan produk.', 'error');
+      toast.error(error instanceof Error ? error.message : 'Gagal menyimpan produk.');
     }
   };
 
   const handleDownloadLabel = async (product: Product) => {
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsDownloadingLabel(true);
     try {
       await downloadProductLabel(activeToken, product.id, 1);
-      toast.addToast('Label produk berhasil diunduh.', 'success');
+      toast.success('Label produk berhasil diunduh.');
     } catch (error) {
       console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal mengunduh label produk.', 'error');
+      toast.error(error instanceof Error ? error.message : 'Gagal mengunduh label produk.');
     } finally {
       setIsDownloadingLabel(false);
     }
@@ -307,17 +288,17 @@ export function ProductsPage() {
 
   const handleDownloadAllPDF = async () => {
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsDownloadingPDF(true);
     try {
       await downloadProductsPDF(activeToken);
-      toast.addToast('PDF produk berhasil diunduh.', 'success');
+      toast.success('PDF produk berhasil diunduh.');
     } catch (error) {
       console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal mengunduh PDF produk.', 'error');
+      toast.error(error instanceof Error ? error.message : 'Gagal mengunduh PDF produk.');
     } finally {
       setIsDownloadingPDF(false);
     }
@@ -325,17 +306,17 @@ export function ProductsPage() {
 
   const handleDownloadAllExcel = async () => {
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsDownloadingExcel(true);
     try {
       await downloadProductsExcel(activeToken);
-      toast.addToast('Excel produk berhasil diunduh.', 'success');
+      toast.success('Excel produk berhasil diunduh.');
     } catch (error) {
       console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal mengunduh Excel produk.', 'error');
+      toast.error(error instanceof Error ? error.message : 'Gagal mengunduh Excel produk.');
     } finally {
       setIsDownloadingExcel(false);
     }
@@ -458,27 +439,14 @@ export function ProductsPage() {
     <div className="products-page">
       {/* Header dengan Search */}
       <div className="products-page__header">
-        <div className="products-page__search-group">
-          <form className="products-page__search-form" onSubmit={handleSearchSubmit}>
-            <input
-              type="text"
-              placeholder="Cari..."
-              className="products-page__search-input"
-              value={searchQuery}
-              onChange={handleSearchInput}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-            />
-            <button
-              className="products-page__search-btn"
-              type="submit"
-              disabled={isLoading}
-              title="Cari"
-            >
-              <Search size={14} />
-              Cari
-            </button>
-          </form>
-        </div>
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          placeholder="Cari produk..."
+          disabled={isLoading}
+        />
         <div className="products-page__header-actions">
           <button
             className="products-page__refresh-btn"
@@ -754,12 +722,9 @@ export function ProductsPage() {
       {/* Pagination */}
       <Pagination
         page={page}
-        totalPages={totalPages}
+        total={total}
+        perPage={perPage}
         onPageChange={(p) => loadProducts(p, activeSearch)}
-        onInputChange={handlePageInputChange}
-        onInputCommit={commitPageInput}
-        onInputKeyDown={handlePageInputKeyDown}
-        pageInput={pageInput}
       />
     </div>
   );
