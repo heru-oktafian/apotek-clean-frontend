@@ -3062,76 +3062,6 @@ code {
 }
 
 /* ── Toolbar (Tambah + Downloads) ────────────────────────── */
-.products-page__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 0.85rem;
-}
-
-.products-page__btn-tambah {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.65rem;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  font-family: inherit;
-}
-
-.products-page__btn-tambah:hover {
-  opacity: 0.9;
-}
-
-.products-page__toolbar-downloads {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.products-page__download-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: transparent;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-  white-space: nowrap;
-}
-
-.products-page__download-btn--excel {
-  color: #10b981;
-  border-color: #10b981;
-}
-
-.products-page__download-btn--excel:hover:not(:disabled) {
-  background: #10b98120;
-}
-
-.products-page__download-btn--pdf {
-  color: #ef4444;
-  border-color: #ef4444;
-}
-
-.products-page__download-btn--pdf:hover:not(:disabled) {
-  background: #ef444420;
-}
-
 .products-page__download-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -3409,6 +3339,268 @@ code {
   .products-page__pagination {
     margin-bottom: 1rem;
   }
+}
+
+/* ── Categories Page (mirrors products-page style) ───────── */
+.categories-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem;
+  background: var(--bg);
+}
+
+.categories-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.categories-page__header .search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.categories-page__search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.categories-page__search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.categories-page__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: var(--text-h);
+  background: var(--bg);
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.categories-page__search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.categories-page__search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-hover);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.categories-page__search-btn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.categories-page__search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.categories-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.categories-page__refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.categories-page__refresh-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.categories-page__refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Toolbar */
+.categories-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.categories-page__btn-tambah {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.categories-page__btn-tambah:hover {
+  opacity: 0.9;
+}
+
+.categories-page__btn-tambah:active {
+  opacity: 0.8;
+}
+
+.categories-page__toolbar-downloads {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.categories-page__download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.categories-page__download-btn--excel {
+  background: transparent;
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.categories-page__download-btn--excel:hover:not(:disabled) {
+  background: #10b98120;
+}
+
+.categories-page__download-btn--pdf {
+  background: transparent;
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.categories-page__download-btn--pdf:hover:not(:disabled) {
+  background: #ef444420;
+}
+
+.categories-page__download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.categories-page__table-wrapper {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 0.35rem;
+  background: var(--surface-card);
+  margin-top: 0.85rem;
+}
+
+.categories-page__table-wrapper > .overflow-x-auto {
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 0.35rem;
+}
+
+.categories-page__table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.categories-page__table-wrapper th,
+.categories-page__table-wrapper td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.categories-page__table-wrapper th:first-child,
+.categories-page__table-wrapper td:first-child {
+  width: 7ch;
+  white-space: nowrap;
+}
+
+.categories-page__table-wrapper th {
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.categories-page__table-wrapper td {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.categories-page__table-wrapper td:last-child {
+  padding: 0.3rem 0.25rem;
+  white-space: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.categories-page__table-wrapper tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.categories-page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
 }
 
 /* ── Master Konversi Satuan / Unit Conversions Page ───────── */

@@ -5,6 +5,7 @@ interface ListSearchBarProps {
   onChange: (value: string) => void;
   onSearch: () => void;
   disabled?: boolean;
+  isLoading?: boolean;
   placeholder?: string;
 }
 
@@ -13,6 +14,7 @@ export function ListSearchBar({
   onChange,
   onSearch,
   disabled,
+  isLoading,
   placeholder = 'Cari...',
 }: ListSearchBarProps) {
   return (
@@ -35,7 +37,7 @@ export function ListSearchBar({
         <button
           className="products-page__search-btn"
           type="submit"
-          disabled={disabled}
+          disabled={disabled || isLoading}
           title="Cari"
         >
           <Search size={14} />
