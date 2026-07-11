@@ -13,6 +13,7 @@ import {
 } from '../api/products-api';
 import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
 import { useListSearch } from '../../../hooks/useListSearch';
 import type { Product, ProductCategory, Unit } from '../types/products';
 
@@ -459,31 +460,15 @@ export function ProductsPage() {
       </div>
 
       {/* Toolbar - Tambah dan Download */}
-      <div className="products-page__toolbar">
-        <button className="products-page__btn-tambah" onClick={openAddProduct}>
-          Tambah +
-        </button>
-        <div className="products-page__toolbar-downloads">
-          <button
-            className="products-page__download-btn products-page__download-btn--excel"
-            onClick={handleDownloadAllExcel}
-            disabled={isDownloadingExcel || isLoading}
-            title="Download Excel"
-          >
-            <Download size={14} />
-            Excel
-          </button>
-          <button
-            className="products-page__download-btn products-page__download-btn--pdf"
-            onClick={handleDownloadAllPDF}
-            disabled={isDownloadingPDF || isLoading}
-            title="Download PDF"
-          >
-            <Download size={14} />
-            PDF
-          </button>
-        </div>
-      </div>
+      <ActionToolbar
+        addLabel="Tambah"
+        onAddClick={openAddProduct}
+        showExportExcel
+        showExportPdf
+        onExportExcel={handleDownloadAllExcel}
+        onExportPdf={handleDownloadAllPDF}
+        isLoading={isLoading || isDownloadingExcel || isDownloadingPDF}
+      />
 
       {/* Table */}
       <div className="products-page__table-wrapper">
