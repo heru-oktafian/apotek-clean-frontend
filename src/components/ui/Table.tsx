@@ -5,6 +5,7 @@ export interface TableColumn<T = unknown> {
   header: string;
   render?: (row: T) => ReactNode;
   align?: 'left' | 'center' | 'right';
+  width?: string;
 }
 
 interface TableProps<T = unknown> {
@@ -28,6 +29,7 @@ export function Table<T = unknown>({
             {columns.map((col) => (
               <th
                 key={col.key}
+                style={col.width ? { width: col.width } : undefined}
                 className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider ${
                   col.align === 'center'
                     ? 'text-center'
@@ -54,6 +56,7 @@ export function Table<T = unknown>({
                 {columns.map((col) => (
                   <td
                     key={col.key}
+                    style={col.width ? { width: col.width } : undefined}
                     className={`px-4 py-3 text-sm text-slate-700 ${
                       col.align === 'center'
                         ? 'text-center'

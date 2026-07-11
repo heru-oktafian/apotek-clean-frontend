@@ -396,6 +396,8 @@ export function ProductsPage() {
     {
       key: 'actions',
       header: 'Aksi',
+      align: 'center',
+      width: '120px',
       render: (row) => (
         <div className="flex gap-1 justify-center">
           <button
