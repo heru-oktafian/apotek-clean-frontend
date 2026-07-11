@@ -1,16 +1,24 @@
 import { useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Download, Search } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { Button, Input, Modal, Pagination, useToast, Table, type TableColumn } from '../../../components/ui';
 import { buildApiUrl } from '../../../lib/api/env';
 import { useCategories, type Category } from '../hooks/useCategories';
 import { createCategory, updateCategory, deleteCategory } from '../api/categories-api';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
+import { useListSearch } from '../../../hooks/useListSearch';
 
 export function CategoriesPage() {
   const { activeToken } = useAuth();
   const toast = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
+
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
+    onSearch: (_search) => loadCategories(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
@@ -18,17 +26,6 @@ export function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const { categories, page, setPage, perPage, total, isLoading, apiError, loadCategories } = useCategories();
-
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    setActiveSearch(searchQuery.trim());
-    setPage(1);
-    void loadCategories(1, searchQuery.trim());
-  };
 
   const openAddCategory = () => {
     setEditingCategory(null);
@@ -119,17 +116,12 @@ export function CategoriesPage() {
     }
   };
 
-  const handleRefresh = () => {
-    setPage(1);
-    setActiveSearch('');
-    setSearchQuery('');
-    void loadCategories(1, '');
-    toast.addToast('Data kategori disegarkan.', 'success');
+  const handlePageChange = (nextPage: number) => {
+    void loadCategories(nextPage, activeSearch);
   };
 
-  const handlePageChange = (nextPage: number) => {
-    setPage(nextPage);
-    void loadCategories(nextPage, activeSearch);
+  const handleRefresh = () => {
+    void loadCategories(page, activeSearch);
   };
 
   const downloadFile = async (path: string, defaultName: string) => {
@@ -197,40 +189,60 @@ export function CategoriesPage() {
     },
   ];
 
+  const startItem = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const endItem = total === 0 ? 0 : Math.min(page * perPage, total);
+
   return (
-    <div className="units-page">
-      <div className="units-page__header">
-        <div className="units-page__search-group">
-          <form className="units-page__search-form" onSubmit={handleSearchSubmit}>
-            <Input placeholder="Cari kategori..." className="units-page__search-input" value={searchQuery} onChange={handleSearchInput} aria-label="Cari kategori" />
-            <button className="units-page__search-btn" type="submit">
-              <Search size={14} />
-              Cari
-            </button>
-          </form>
-          <button type="button" className="units-page__refresh-btn" onClick={handleRefresh} title="Refresh">
-            <RefreshCw size={16} />
+    <div className="categories-page">
+      {/* Header dengan Search */}
+      <div className="categories-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari kategori..."
+          disabled={isLoading}
+        />
+        <div className="categories-page__header-actions">
+          <button
+            className="categories-page__refresh-btn"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            title="Refresh"
+          >
+            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
-      <div className="units-page__toolbar">
-        <button type="button" className="units-page__btn-tambah" onClick={openAddCategory}>
+      {/* Toolbar - Tambah dan Download */}
+      <div className="categories-page__toolbar">
+        <button className="categories-page__btn-tambah" onClick={openAddCategory}>
           Tambah +
         </button>
-        <div className="units-page__download-group">
-          <button type="button" className="units-page__btn-download units-page__btn-download--excel" onClick={handleDownloadExcel} title="Download Excel">
+        <div className="categories-page__toolbar-downloads">
+          <button
+            className="categories-page__download-btn categories-page__download-btn--excel"
+            onClick={handleDownloadExcel}
+            disabled={isLoading}
+            title="Download Excel"
+          >
             <Download size={14} />
             Excel
           </button>
-          <button type="button" className="units-page__btn-download units-page__btn-download--pdf" onClick={handleDownloadPDF} title="Download PDF">
+          <button
+            className="categories-page__download-btn categories-page__download-btn--pdf"
+            onClick={handleDownloadPDF}
+            disabled={isLoading}
+            title="Download PDF"
+          >
             <Download size={14} />
             PDF
           </button>
         </div>
       </div>
 
-      <div className="units-page__table-wrapper">
+      <div className="categories-page__table-wrapper">
         {apiError ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{apiError}</div> : null}
         <Table columns={columns} data={categories} emptyText={isLoading ? 'Memuat data...' : 'Tidak ada kategori produk'} />
       </div>
