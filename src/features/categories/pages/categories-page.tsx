@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { Button, Input, Modal, Pagination, useToast, Table, type TableColumn } from '../../../components/ui';
 import { buildApiUrl } from '../../../lib/api/env';
