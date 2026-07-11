@@ -176,13 +176,15 @@ export function CategoriesPage() {
     {
       key: 'actions',
       header: 'Aksi',
+      align: 'center',
+      width: '120px',
       render: (row) => (
-        <div className="flex gap-2">
-          <button type="button" onClick={() => openEditCategory(row)} className="inline-flex items-center justify-center p-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors" title="Edit">
-            <Edit2 size={16} />
+        <div className="flex gap-1 justify-center">
+          <button type="button" onClick={() => openEditCategory(row)} className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors" title="Edit">
+            <Edit2 size={14} />
           </button>
-          <button type="button" onClick={() => openDeleteConfirm(row)} className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors" title="Hapus">
-            <Trash2 size={16} />
+          <button type="button" onClick={() => openDeleteConfirm(row)} className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Hapus">
+            <Trash2 size={14} />
           </button>
         </div>
       ),
