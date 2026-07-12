@@ -1015,3 +1015,46 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Status**: ✅ Complete
 **Next Phase**: Testing & User Acceptance
 
+
+---
+
+### 13. Refactoring API & Types Files — Standardization & Documentation
+**Tanggal**: 2026-07-12
+**File Utama**: 15 file di 8 feature folders
+
+**Daftar File yang Ditanam Ulang (Refactored)**:
+- `features/units/api/units-api.ts` + `types/units.ts`
+- `features/categories/api/categories-api.ts` + `types/categories.ts`
+- `features/suppliers/api/suppliers-api.ts` + `types/suppliers.ts`
+- `features/suppliers/api/supplier-categories-api.ts` + `types/supplier-categories.ts`
+- `features/member-categories/api/member-categories-api.ts` + `types/member-categories.ts`
+- `features/members/api/members-api.ts` + `types/members.ts`
+- `features/users/api/users-api.ts` + `types/users.ts`
+- `features/menu/api/menu-api.ts`
+
+**Referensi Standar**: `features/products/api/products-api.ts`
+
+**Perubahan**:
+- Menambahkan JSDoc comment di setiap fungsi API
+- Menambahkan JSDoc di setiap interface/type
+- Ekstrak Payload interface ke atas file, terpisah dari function signature
+- Tambahkan return type annotation (Promise<...>)
+- Tambahkan separator comment gaya `// ── Function Name ───`
+- Perbaiki formatting code biar rapi dan konsisten
+
+**Dampak**:
+- Semua file API dan types mengikuti standar yang sama
+- Kode lebih mudah dibaca dan dipelihara
+- Dokumentasi yang jelas memudahkan programmer baru
+
+**Catatan Penting — CRITICAL RULE CSS/LAYOUT**:
+> Abi hampir quit project karena CSS changes terus merusak dashboard layout.
+> Dashboard BREAK dari attempt dark→light theme (2026-06-27).
+> Lesson: HANYA sentuh API/TypeScript code. JANGAN sentuh CSS atau layout.
+> Jika ada yang break → `git checkout -- .` immediately.
+> **`products-page.tsx` = reference style, TIDAK disentuh.**
+
+**Last Updated**: 2026-07-12 - API & Types Refactoring Complete
+**Status**: ✅ Complete
+**Next Phase**: Testing & User Acceptance
+
