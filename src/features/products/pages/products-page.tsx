@@ -439,9 +439,9 @@ export function ProductsPage() {
   }));
 
   return (
-    <div className="products-page">
+    <div className="list-page">
       {/* Header dengan Search */}
-      <div className="products-page__header">
+      <div className="list-page__header">
         <ListSearchBar
           value={searchInput}
           onChange={handleSearchInputChange}
@@ -449,9 +449,9 @@ export function ProductsPage() {
           placeholder="Cari produk..."
           disabled={isLoading}
         />
-        <div className="products-page__header-actions">
+        <div className="list-page__header-actions">
           <button
-            className="products-page__refresh-btn"
+            className="list-page__refresh-btn"
             onClick={handleRefresh}
             disabled={isLoading}
             title="Refresh"
@@ -473,9 +473,9 @@ export function ProductsPage() {
       />
 
       {/* Table */}
-      <div className="products-page__table-wrapper">
+      <div className="list-page__table-wrapper">
         {isLoading ? (
-          <div className="products-page__loading">
+          <div className="list-page__loading">
             Memuat data...
           </div>
         ) : (

@@ -105,7 +105,7 @@ export function UserEditPage() {
 
                         <button
                           type="button"
-                          className="units-page__btn-tambah"
+                          className="list-page__btn-tambah"
                           onClick={() => navigate(`/system/users/${userId}/edit`)}
                           disabled={saving}
                         >
@@ -138,7 +138,7 @@ export function UserEditPage() {
             <div className="flex justify-end mb-2">
               <button
                 type="button"
-                className="units-page__btn-tambah"
+                className="list-page__btn-tambah"
                 onClick={() => toast.addToast('Fungsi Tambah Akses Branch belum tersedia.', 'info')}
               >
                 Tambah Akses Branch

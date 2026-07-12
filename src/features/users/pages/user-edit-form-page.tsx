@@ -105,7 +105,7 @@ export function UserEditFormPage() {
           <Button variant="secondary" onClick={() => navigate(`/system/users/${userId}`)} disabled={saving}>
             Cancel
           </Button>
-          <button type="button" className="units-page__btn-tambah" onClick={handleSave} disabled={saving}>
+          <button type="button" className="list-page__btn-tambah" onClick={handleSave} disabled={saving}>
             {saving ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>

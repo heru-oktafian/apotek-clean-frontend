@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
+import { Plus, Download } from 'lucide-react';
+import { Button } from './ui';
 
 // ============================================
 // TYPES
 // ============================================
 
-export interface Column<T> {
+export interface Column<T extends object> {
   key: keyof T | string;
   header: string;
   width?: string;
@@ -12,7 +14,7 @@ export interface Column<T> {
   render?: (value: unknown, row: T, index: number) => React.ReactNode;
 }
 
-export interface ListTablePageProps<T> {
+export interface ListTablePageProps<T extends object> {
   // Breadcrumb & Subtitle
   breadcrumbs?: string[];
   subtitle?: React.ReactNode;
@@ -21,36 +23,29 @@ export interface ListTablePageProps<T> {
   columns: Column<T>[];
   data: T[];
   loading?: boolean;
+  emptyMessage?: string;
+
+  // Toolbar
+  toolbarLeft?: React.ReactNode;
+  toolbarRight?: React.ReactNode;
 
   // Pagination
   pageSize?: number;
   currentPage?: number;
   totalData?: number;
   onPageChange?: (page: number) => void;
-
-  // Actions
-  onAdd?: () => void;
-  onEdit?: (row: T) => void;
-  onDelete?: (row: T) => void;
-  onExportExcel?: () => void;
-  onExportPDF?: () => void;
   onRefresh?: () => void;
 
-  // Row Selection
+  // Selection
   selectable?: boolean;
   selectedRows?: T[];
   onSelectionChange?: (selected: T[]) => void;
-
-  // Custom toolbar right slot (e.g. upload button)
-  toolbarRight?: React.ReactNode;
-
-  // Custom render for empty state
-  emptyMessage?: string;
 }
 
 // ============================================
-// HELPER: Format Currency
+// HELPERS
 // ============================================
+
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -60,9 +55,6 @@ export const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-// ============================================
-// HELPER: Calculate Pagination Range
-// ============================================
 const calculateRange = (total: number, pageSize: number, currentPage: number) => {
   const totalPages = Math.ceil(total / pageSize);
   const start = (currentPage - 1) * pageSize + 1;
@@ -73,37 +65,33 @@ const calculateRange = (total: number, pageSize: number, currentPage: number) =>
 // ============================================
 // COMPONENT: ListTablePage
 // ============================================
-export function ListTablePage<T extends Record<string, unknown>>({
+export function ListTablePage<T extends object>({
   breadcrumbs = [],
   subtitle = '',
   columns,
   data,
   loading = false,
+  emptyMessage = 'Tidak ada data',
+  toolbarLeft,
+  toolbarRight,
   pageSize = 12,
   currentPage = 1,
   totalData = 0,
   onPageChange,
-  onAdd,
-  onEdit,
-  onDelete,
-  onExportExcel,
-  onExportPDF,
   onRefresh,
   selectable = false,
   selectedRows = [],
   onSelectionChange,
-  emptyMessage = 'Tidak ada data',
 }: ListTablePageProps<T>) {
   const [pageInput, setPageInput] = useState(String(currentPage));
   const totalPages = Math.ceil(totalData / pageSize);
   const { start, end } = calculateRange(totalData, pageSize, currentPage);
 
-  // Handle page input change
+  // Page input
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageInput(e.target.value);
   };
 
-  // Handle page input submit
   const handlePageInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const page = parseInt(pageInput, 10);
@@ -114,40 +102,26 @@ export function ListTablePage<T extends Record<string, unknown>>({
     }
   };
 
-  // Handle page input blur
-  const handlePageInputBlur = () => {
-    setPageInput(String(currentPage));
-  };
-
-  // Toggle select all
+  // Selection helpers
   const handleSelectAll = () => {
     if (!onSelectionChange) return;
-    if (selectedRows.length === data.length) {
-      onSelectionChange([]);
-    } else {
-      onSelectionChange([...data]);
-    }
+    onSelectionChange(selectedRows.length === data.length ? [] : [...data]);
   };
 
-  // Toggle select row
   const handleSelectRow = (row: T) => {
     if (!onSelectionChange) return;
-    const isSelected = selectedRows.some(
-      (r, i) => JSON.stringify(r) === JSON.stringify(row)
+    const isSelected = selectedRows.some((r) => JSON.stringify(r) === JSON.stringify(row));
+    onSelectionChange(
+      isSelected
+        ? selectedRows.filter((r) => JSON.stringify(r) !== JSON.stringify(row))
+        : [...selectedRows, row]
     );
-    if (isSelected) {
-      onSelectionChange(selectedRows.filter((r) => JSON.stringify(r) !== JSON.stringify(row)));
-    } else {
-      onSelectionChange([...selectedRows, row]);
-    }
   };
 
-  // Check if row is selected
-  const isRowSelected = (row: T) => {
-    return selectedRows.some((r) => JSON.stringify(r) === JSON.stringify(row));
-  };
+  const isRowSelected = (row: T) =>
+    selectedRows.some((r) => JSON.stringify(r) === JSON.stringify(row));
 
-  // Render cell value
+  // Cell value
   const renderCellValue = (column: Column<T>, row: T, rowIndex: number) => {
     if (column.render) {
       return column.render(row[column.key as keyof T], row, rowIndex);
@@ -155,15 +129,19 @@ export function ListTablePage<T extends Record<string, unknown>>({
     return String(row[column.key as keyof T] ?? '');
   };
 
+  const colSpan =
+    columns.length +
+    (selectable ? 1 : 0) +
+    1 + // No column
+    (onSelectionChange ? 0 : 0); // Edit/Delete handled by page
+
   return (
     <div className="list-table-page">
-      {/* Breadcrumb & Subtitle */}
+      {/* Header */}
       {(breadcrumbs.length > 0 || subtitle) && (
         <div className="list-table-page__header">
           {breadcrumbs.length > 0 && (
-            <p className="list-table-page__breadcrumb">
-              {breadcrumbs.join(' > ')}
-            </p>
+            <p className="list-table-page__breadcrumb">{breadcrumbs.join(' > ')}</p>
           )}
           {subtitle && <h2 className="list-table-page__subtitle">{subtitle}</h2>}
         </div>
@@ -171,70 +149,51 @@ export function ListTablePage<T extends Record<string, unknown>>({
 
       {/* Toolbar */}
       <div className="list-table-page__toolbar">
-        <div className="list-table-page__toolbar-left">
-          {onAdd && (
-            <button className="list-table-page__btn list-table-page__btn--primary" onClick={onAdd}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3V13M3 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              Tambah
-            </button>
-          )}
-        </div>
-        <div className="list-table-page__toolbar-right">
-          {onExportExcel && (
-            <button className="list-table-page__btn list-table-page__btn--secondary" onClick={onExportExcel}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M14 10V12.67C14 13.2 13.57 13.63 13.04 13.65C10.63 13.77 8.18 13.84 5.76 13.79C5.3 13.78 4.84 13.6 4.5 13.26C4.16 12.92 3.98 12.46 3.97 12C3.94 9.58 4 7.12 3.88 4.72C3.87 4.19 4.3 3.76 4.83 3.75C7.24 3.66 9.68 3.58 12.1 3.62C12.64 3.63 13.08 4.06 13.08 4.61V6.94M2 10.5H14M5 7.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              Download Excel
-            </button>
-          )}
-          {onExportPDF && (
-            <button className="list-table-page__btn list-table-page__btn--secondary" onClick={onExportPDF}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M14 10V12.67C14 13.2 13.57 13.63 13.04 13.65C10.63 13.77 8.18 13.84 5.76 13.79C5.3 13.78 4.84 13.6 4.5 13.26C4.16 12.92 3.98 12.46 3.97 12C3.94 9.58 4 7.12 3.88 4.72C3.87 4.19 4.3 3.76 4.83 3.75C7.24 3.66 9.68 3.58 12.1 3.62C12.64 3.63 13.08 4.06 13.08 4.61V6.94M2 10.5H14M5 7.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              Download PDF
-            </button>
-          )}
-          {toolbarRight}
-        </div>
+        <div className="list-table-page__toolbar-left">{toolbarLeft}</div>
+        <div className="list-table-page__toolbar-right">{toolbarRight}</div>
       </div>
 
       {/* Table */}
-      <div className="list-table-page__table-wrapper">
-        <table className="list-table-page__table">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full">
+          <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               {selectable && (
-                <th className="list-table-page__th list-table-page__th--checkbox">
+                <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
+                    className="rounded border-slate-300"
                     checked={data.length > 0 && selectedRows.length === data.length}
                     onChange={handleSelectAll}
                   />
                 </th>
               )}
-              <th className="list-table-page__th">No</th>
+              <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center w-12">
+                No
+              </th>
               {columns.map((col) => (
-                <th key={String(col.key)} className="list-table-page__th" style={{ width: col.width }}>
+                <th
+                  key={String(col.key)}
+                  className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider ${
+                    col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                  }`}
+                  style={{ width: col.width }}
+                >
                   {col.header}
                 </th>
               ))}
-              {(onEdit || onDelete) && <th className="list-table-page__th">Aksi</th>}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={columns.length + (selectable ? 2 : 1) + (onEdit || onDelete ? 1 : 0)} className="list-table-page__td list-table-page__td--loading">
+                <td colSpan={colSpan + (selectable ? 1 : 0)} className="px-4 py-8 text-center text-sm text-slate-400">
                   Memuat data...
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (selectable ? 2 : 1) + (onEdit || onDelete ? 1 : 0)} className="list-table-page__td list-table-page__td--empty">
+                <td colSpan={colSpan + (selectable ? 1 : 0)} className="px-4 py-8 text-center text-sm text-slate-400">
                   {emptyMessage}
                 </td>
               </tr>
@@ -242,47 +201,33 @@ export function ListTablePage<T extends Record<string, unknown>>({
               data.map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
-                  className={`list-table-page__tr ${isRowSelected(row) ? 'list-table-page__tr--selected' : ''}`}
+                  className={`hover:bg-slate-50 transition-colors ${
+                    isRowSelected(row) ? 'bg-primary/5' : ''
+                  }`}
                 >
                   {selectable && (
-                    <td className="list-table-page__td list-table-page__td--checkbox">
+                    <td className="px-4 py-3 text-center">
                       <input
                         type="checkbox"
+                        className="rounded border-slate-300"
                         checked={isRowSelected(row)}
                         onChange={() => handleSelectRow(row)}
                       />
                     </td>
                   )}
-                  <td className="list-table-page__td">{rowIndex + 1}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500 text-center">
+                    {rowIndex + 1}
+                  </td>
                   {columns.map((col) => (
                     <td
                       key={String(col.key)}
-                      className="list-table-page__td"
-                      style={{ textAlign: col.align }}
+                      className={`px-4 py-3 text-sm text-slate-700 ${
+                        col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
                     >
                       {renderCellValue(col, row, rowIndex)}
                     </td>
                   ))}
-                  {(onEdit || onDelete) && (
-                    <td className="list-table-page__td list-table-page__td--actions">
-                      {onEdit && (
-                        <button
-                          className="list-table-page__action-btn list-table-page__action-btn--edit"
-                          onClick={() => onEdit(row)}
-                        >
-                          Edit
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          className="list-table-page__action-btn list-table-page__action-btn--delete"
-                          onClick={() => onDelete(row)}
-                        >
-                          Hapus
-                        </button>
-                      )}
-                    </td>
-                  )}
                 </tr>
               ))
             )}
@@ -292,39 +237,46 @@ export function ListTablePage<T extends Record<string, unknown>>({
 
       {/* Pagination */}
       {totalData > 0 && (
-        <div className="list-table-page__pagination">
-          <span className="list-table-page__pagination-info">
-            Showing {start} - {end} of {totalData}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-white rounded-b-xl">
+          <span className="text-xs text-slate-500">
+            Menampilkan {start}–{end} dari {totalData}
           </span>
-          <div className="list-table-page__pagination-controls">
+          <div className="flex items-center gap-2">
             <button
-              className="list-table-page__pagination-btn"
+              className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               disabled={currentPage <= 1}
               onClick={() => onPageChange?.(currentPage - 1)}
             >
-              &lt;
+              ‹
             </button>
-            <form onSubmit={handlePageInputSubmit} className="list-table-page__pagination-form">
+            <form onSubmit={handlePageInputSubmit} className="flex items-center">
               <input
                 type="text"
-                className="list-table-page__pagination-input"
+                className="w-14 px-2 py-1.5 text-sm text-center rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 value={pageInput}
                 onChange={handlePageInputChange}
-                onBlur={handlePageInputBlur}
+                onBlur={() => setPageInput(String(currentPage))}
               />
             </form>
+            <span className="text-xs text-slate-400">/ {totalPages}</span>
             <button
-              className="list-table-page__pagination-btn"
+              className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               disabled={currentPage >= totalPages}
               onClick={() => onPageChange?.(currentPage + 1)}
             >
-              &gt;
+              ›
             </button>
+            {onRefresh && (
+              <button
+                className="ml-2 px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                onClick={onRefresh}
+              >
+                Refresh
+              </button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
-export default ListTablePage;
