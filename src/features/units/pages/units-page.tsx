@@ -1,97 +1,133 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, Plus, Download, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { useToast, Input, FormField } from '../../../components/ui';
-import { buildApiUrl } from '../../../lib/api/env';
 import { useUnits } from '../hooks/useUnits';
 import { createUnit, updateUnit, deleteUnit } from '../api/units-api';
-import { ListTablePage, type Column } from '../../../components/ListTablePage';
-import { FormModal } from '../../../components/common/FormModal';
+import { buildApiUrl } from '../../../lib/api/env';
+import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { useListSearch } from '../../../hooks/useListSearch';
 
 interface UnitRow {
-  _index: number;
-  id?: number;
+  _index?: number;
+  id?: number | string;
   name: string;
   createdAt?: string;
 }
 
+interface UnitFormData {
+  name: string;
+}
+
 export function UnitsPage() {
   const { activeToken } = useAuth();
-  const toast = useToast();
 
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const { units, total, perPage, isLoading, loadUnits } = useUnits(activeToken || '');
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch, handleReset } = useListSearch({
+    onSearch: (_search) => loadUnits(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const { units, total, page, perPage, isLoading, loadUnits } = useUnits(activeToken || '');
+
+  // Modal state
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<UnitRow | null>(null);
-  const [unitName, setUnitName] = useState('');
+  const [formData, setFormData] = useState<UnitFormData>({ name: '' });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof UnitFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete state
   const [deleteTarget, setDeleteTarget] = useState<UnitRow | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ── Load ────────────────────────────────────────
-  const handleSearch = (s: string) => {
-    setSearch(s);
-    setPage(1);
-    loadUnits(1, s);
+  // Download states
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  // ── Refresh ──────────────────────────────────────
+  const handleRefresh = () => {
+    loadUnits(page, activeSearch);
   };
 
   // ── Add / Edit ─────────────────────────────────
   const openAdd = () => {
     setEditingUnit(null);
-    setUnitName('');
-    setModalOpen(true);
+    setFormData({ name: '' });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
   const openEdit = (unit: UnitRow) => {
     setEditingUnit(unit);
-    setUnitName(unit.name);
-    setModalOpen(true);
+    setFormData({ name: unit.name });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!unitName.trim()) {
-      toast.addToast('Nama satuan wajib diisi.', 'error');
+  const closeEdit = () => {
+    setEditingUnit(null);
+    setIsEditOpen(false);
+    setFormData({ name: '' });
+    setFormErrors({});
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      setFormErrors({ name: 'Nama satuan wajib diisi.' });
+      toast.error('Nama satuan wajib diisi.');
       return;
     }
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (editingUnit?.id) {
-        await updateUnit(activeToken, editingUnit.id, { name: unitName });
-        toast.addToast('Satuan berhasil diperbarui.', 'success');
+        await updateUnit(activeToken, editingUnit.id, { name: formData.name });
+        toast.success('Satuan berhasil diperbarui.');
       } else {
-        await createUnit(activeToken, { name: unitName });
-        toast.addToast('Satuan berhasil ditambahkan.', 'success');
+        await createUnit(activeToken, { name: formData.name });
+        toast.success('Satuan berhasil ditambahkan.');
       }
-      setModalOpen(false);
-      loadUnits(page, search);
+      closeEdit();
+      loadUnits(1, activeSearch);
     } catch {
-      toast.addToast('Gagal menyimpan satuan.', 'error');
+      toast.error('Gagal menyimpan satuan.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ── Delete ──────────────────────────────────────
-  const handleDelete = (unit: UnitRow) => setDeleteTarget(unit);
+  const openDeleteConfirm = (unit: UnitRow) => {
+    setDeleteTarget(unit);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteTarget(null);
+    setIsDeleteConfirmOpen(false);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget?.id || !activeToken) return;
+
     setIsDeleting(true);
     try {
       await deleteUnit(activeToken, deleteTarget.id);
-      toast.addToast('Satuan berhasil dihapus.', 'success');
-      setDeleteTarget(null);
-      loadUnits(page, search);
+      toast.success('Satuan berhasil dihapus.');
+      closeDeleteConfirm();
+      loadUnits(page, activeSearch);
     } catch {
-      toast.addToast('Gagal menghapus satuan.', 'error');
+      toast.error('Gagal menghapus satuan.');
     } finally {
       setIsDeleting(false);
     }
@@ -99,7 +135,7 @@ export function UnitsPage() {
 
   // ── Download ────────────────────────────────────
   const downloadFile = async (path: string, defaultName: string) => {
-    if (!activeToken) { toast.addToast('Token tidak tersedia.', 'error'); return; }
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
     try {
       const res = await fetch(buildApiUrl(path), {
         headers: { Authorization: `Bearer ${activeToken}`, Accept: '*/*' },
@@ -112,97 +148,180 @@ export function UnitsPage() {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      toast.addToast('Gagal mengunduh file.', 'error');
+      toast.error('Gagal mengunduh file.');
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
+    setIsDownloadingExcel(true);
+    try {
+      await downloadFile('/api/units/excel', 'satuan.xlsx');
+      toast.success('Excel berhasil diunduh.');
+    } catch {
+      toast.error('Gagal mengunduh Excel.');
+    } finally {
+      setIsDownloadingExcel(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
+    setIsDownloadingPdf(true);
+    try {
+      await downloadFile('/api/units/pdf', 'satuan.pdf');
+      toast.success('PDF berhasil diunduh.');
+    } catch {
+      toast.error('Gagal mengunduh PDF.');
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
   // ── Columns ────────────────────────────────────
   const dataWithIndex: UnitRow[] = units.map((u, i) => ({ ...u, _index: i }));
-  const columns: Column<UnitRow>[] = [
+  const columns: TableColumn<UnitRow>[] = [
     {
       key: 'no',
       header: 'No',
       align: 'center',
       width: '60px',
-      render: (_, row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
+      render: (row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
     },
     { key: 'name', header: 'Nama Satuan' },
     {
-      key: 'actions', header: 'Aksi', align: 'center', width: '120px',
-      render: (_, row) => (
-        <div className="flex justify-center gap-2">
-          <button onClick={() => openEdit(row)} className="p-2 rounded bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors" title="Edit"><Edit2 size={14} /></button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-colors" title="Hapus"><Trash2 size={14} /></button>
+      key: 'actions',
+      header: 'Aksi',
+      align: 'center',
+      width: '120px',
+      render: (row) => (
+        <div className="flex justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => openEdit(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors"
+            title="Edit"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openDeleteConfirm(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+            title="Hapus"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <>
-      <ListTablePage
-        breadcrumbs={['Master', 'Satuan']}
-        subtitle="Kelola Satuan Produk"
-        columns={columns}
-        data={dataWithIndex}
-        loading={isLoading}
-        emptyMessage="Tidak ada data satuan"
-        pageSize={perPage}
-        currentPage={page}
-        totalData={total}
-        onPageChange={(p) => { setPage(p); loadUnits(p, search); }}
-        onRefresh={() => loadUnits(page, search)}
-        toolbarLeft={
-          <Input
-            placeholder="Cari satuan..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch(search)}
-            className="w-64"
-          />
-        }
-        toolbarRight={
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">
-              Tambah +
-            </button>
-            <button onClick={() => downloadFile('/api/units/excel', 'satuan.xlsx')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
-              <Download size={14} />
-            </button>
-            <button onClick={() => downloadFile('/api/units/pdf', 'satuan.pdf')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
-              PDF
-            </button>
-          </div>
-        }
+    <div className="list-page">
+      {/* Header dengan Search */}
+      <div className="list-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari satuan..."
+          disabled={isLoading}
+        />
+        <button
+          className="list-page__refresh-btn"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <ActionToolbar
+        addLabel="Tambah"
+        onAddClick={openAdd}
+        showExportExcel
+        showExportPdf
+        onExportExcel={handleDownloadExcel}
+        onExportPdf={handleDownloadPdf}
+        isLoading={isLoading || isDownloadingExcel || isDownloadingPdf}
       />
 
-      <FormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingUnit ? 'Ubah Satuan' : 'Tambah Satuan'}
-        submitLabel={editingUnit ? 'Simpan' : 'Tambahkan'}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
+      {/* Table */}
+      <div className="list-page__table-wrapper">
+        {isLoading ? (
+          <div className="list-page__loading">Memuat data...</div>
+        ) : (
+          <Table<UnitRow>
+            columns={columns}
+            data={dataWithIndex}
+            emptyText="Tidak ada data satuan"
+          />
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        title="Hapus Satuan"
         size="sm"
       >
-        <FormField label="Nama Satuan">
-          <Input
-            placeholder="Masukkan nama satuan"
-            value={unitName}
-            onChange={(e) => setUnitName(e.target.value)}
-            autoFocus
-          />
-        </FormField>
-      </FormModal>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700">
+            Yakin menghapus satuan <strong>{deleteTarget?.name}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
+            <Button type="button" variant="danger" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Hapus Satuan"
-        message={`Yakin menghapus satuan "${deleteTarget?.name}"?`}
-        isLoading={isDeleting}
+      {/* Edit / Add Modal */}
+      <Modal
+        open={isEditOpen}
+        onClose={closeEdit}
+        title={editingUnit ? 'Ubah Satuan' : 'Tambah Satuan'}
+        size="sm"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Input
+              placeholder="Nama satuan"
+              value={formData.name}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+              }}
+              aria-label="Nama satuan"
+            />
+            {formErrors.name && <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>}
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
+            <Button
+              type="submit"
+              variant={editingUnit ? 'outline' : 'primary'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Menyimpan...' : editingUnit ? 'Simpan' : 'Tambahkan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(p) => loadUnits(p, activeSearch)}
       />
-    </>
+    </div>
   );
 }

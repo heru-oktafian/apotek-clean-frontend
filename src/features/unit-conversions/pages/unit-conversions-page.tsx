@@ -1,255 +1,380 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { useToast, Input, Select, FormField } from '../../../components/ui';
-import { buildApiUrl } from '../../../lib/api/env';
 import { useUnitConversions } from '../hooks/useUnitConversions';
 import { useUnits } from '../../units/hooks/useUnits';
 import { createUnitConversion, updateUnitConversion, deleteUnitConversion } from '../api/unit-conversions-api';
-import { ListTablePage, type Column } from '../../../components/ListTablePage';
-import { FormModal } from '../../../components/common/FormModal';
+import { buildApiUrl } from '../../../lib/api/env';
+import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { useListSearch } from '../../../hooks/useListSearch';
 
 interface ConversionRow {
-  _index: number;
+  _index?: number;
   id?: number;
-  unitId: number;
-  convertToUnitId: number;
-  conversionValue: number;
-  unitName?: string;
-  convertToUnitName?: string;
+  from_unit_id?: number;
+  to_unit_id?: number;
+  from_unit_name?: string;
+  to_unit_name?: string;
+  conversion_value?: number;
+}
+
+interface ConversionFormData {
+  unitId: string;
+  convertToUnitId: string;
+  conversionValue: string;
 }
 
 export function UnitConversionsPage() {
   const { activeToken } = useAuth();
-  const toast = useToast();
 
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const { conversions, total, perPage, isLoading, loadConversions } = useUnitConversions(activeToken || '');
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
+    onSearch: (_search) => loadUnitConversions(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
+
+  const { unitConversions, total, page, perPage, isLoading, loadUnitConversions } = useUnitConversions(activeToken || '');
   const { units } = useUnits(activeToken || '');
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // Modal state
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingConversion, setEditingConversion] = useState<ConversionRow | null>(null);
-  const [unitId, setUnitId] = useState('');
-  const [convertToUnitId, setConvertToUnitId] = useState('');
-  const [conversionValue, setConversionValue] = useState('');
+  const [formData, setFormData] = useState<ConversionFormData>({
+    unitId: '',
+    convertToUnitId: '',
+    conversionValue: '',
+  });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof ConversionFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete state
   const [deleteTarget, setDeleteTarget] = useState<ConversionRow | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ── Load ────────────────────────────────────────
-  const handleSearch = (s: string) => {
-    setSearch(s);
-    setPage(1);
-    loadConversions(1, s);
+  // Download state
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+
+  // ── Refresh ──────────────────────────────────────
+  const handleRefresh = () => {
+    loadUnitConversions(page, activeSearch);
   };
 
   // ── Add / Edit ─────────────────────────────────
   const openAdd = () => {
     setEditingConversion(null);
-    setUnitId('');
-    setConvertToUnitId('');
-    setConversionValue('');
-    setModalOpen(true);
+    setFormData({ unitId: '', convertToUnitId: '', conversionValue: '' });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
   const openEdit = (conv: ConversionRow) => {
     setEditingConversion(conv);
-    setUnitId(String(conv.unitId));
-    setConvertToUnitId(String(conv.convertToUnitId));
-    setConversionValue(String(conv.conversionValue));
-    setModalOpen(true);
+    setFormData({
+      unitId: String(conv.from_unit_id ?? ''),
+      convertToUnitId: String(conv.to_unit_id ?? ''),
+      conversionValue: String(conv.conversion_value ?? ''),
+    });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!unitId || !convertToUnitId || !conversionValue) {
-      toast.addToast('Semua field wajib diisi.', 'error');
-      return;
+  const closeEdit = () => {
+    setEditingConversion(null);
+    setIsEditOpen(false);
+    setFormData({ unitId: '', convertToUnitId: '', conversionValue: '' });
+    setFormErrors({});
+  };
+
+  const validateForm = () => {
+    const errors: Partial<Record<keyof ConversionFormData, string>> = {};
+    if (!formData.unitId) errors.unitId = 'Satuan asal wajib dipilih';
+    if (!formData.convertToUnitId) errors.convertToUnitId = 'Satuan tujuan wajib dipilih';
+    if (!formData.conversionValue) errors.conversionValue = 'Nilai konversi wajib diisi';
+    if (formData.unitId && formData.convertToUnitId && formData.unitId === formData.convertToUnitId) {
+      errors.convertToUnitId = 'Satuan asal dan tujuan tidak boleh sama';
     }
-    if (unitId === convertToUnitId) {
-      toast.addToast('Satuan asal dan tujuan tidak boleh sama.', 'error');
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Periksa kembali form konversi.');
       return;
     }
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const body = {
-        unitId: Number(unitId),
-        convertToUnitId: Number(convertToUnitId),
-        conversionValue: parseFloat(conversionValue),
+        product_id: '',
+        init_id: Number(formData.unitId),
+        final_id: Number(formData.convertToUnitId),
+        value_conv: Number(formData.conversionValue),
       };
       if (editingConversion?.id) {
         await updateUnitConversion(activeToken, editingConversion.id, body);
-        toast.addToast('Konversi berhasil diperbarui.', 'success');
+        toast.success('Konversi berhasil diperbarui.');
       } else {
         await createUnitConversion(activeToken, body);
-        toast.addToast('Konversi berhasil ditambahkan.', 'success');
+        toast.success('Konversi berhasil ditambahkan.');
       }
-      setModalOpen(false);
-      loadConversions(page, search);
+      closeEdit();
+      loadUnitConversions(1, activeSearch);
     } catch {
-      toast.addToast('Gagal menyimpan konversi.', 'error');
+      toast.error('Gagal menyimpan konversi.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ── Delete ──────────────────────────────────────
-  const handleDelete = (conv: ConversionRow) => setDeleteTarget(conv);
+  const openDeleteConfirm = (conv: ConversionRow) => {
+    setDeleteTarget(conv);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteTarget(null);
+    setIsDeleteConfirmOpen(false);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget?.id || !activeToken) return;
+
     setIsDeleting(true);
     try {
       await deleteUnitConversion(activeToken, deleteTarget.id);
-      toast.addToast('Konversi berhasil dihapus.', 'success');
-      setDeleteTarget(null);
-      loadConversions(page, search);
+      toast.success('Konversi berhasil dihapus.');
+      closeDeleteConfirm();
+      loadUnitConversions(page, activeSearch);
     } catch {
-      toast.addToast('Gagal menghapus konversi.', 'error');
+      toast.error('Gagal menghapus konversi.');
     } finally {
       setIsDeleting(false);
     }
   };
 
   // ── Download ────────────────────────────────────
-  const downloadFile = async (path: string, defaultName: string) => {
-    if (!activeToken) { toast.addToast('Token tidak tersedia.', 'error'); return; }
+  const handleDownloadExcel = async () => {
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
+    setIsDownloadingExcel(true);
     try {
-      const res = await fetch(buildApiUrl(path), {
+      const res = await fetch(buildApiUrl('/api/unit-conversions/excel'), {
         headers: { Authorization: `Bearer ${activeToken}`, Accept: '*/*' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = defaultName;
+      a.download = 'konversi.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
+      toast.success('Excel berhasil diunduh.');
     } catch {
-      toast.addToast('Gagal mengunduh file.', 'error');
+      toast.error('Gagal mengunduh Excel.');
+    } finally {
+      setIsDownloadingExcel(false);
     }
   };
 
   // ── Columns ────────────────────────────────────
-  const dataWithIndex: ConversionRow[] = conversions.map((c, i) => ({ ...c, _index: i }));
-  const columns: Column<ConversionRow>[] = [
+  const dataWithIndex: ConversionRow[] = unitConversions.map((c: any, i: number) => ({ ...c, _index: i }));
+  const columns: TableColumn<ConversionRow>[] = [
     {
       key: 'no',
       header: 'No',
       align: 'center',
       width: '60px',
-      render: (_, row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
+      render: (row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
     },
-    { key: 'unitName', header: 'Satuan Asal' },
-    { key: 'convertToUnitName', header: 'Satuan Tujuan' },
+    { key: 'from_unit_name', header: 'Satuan Asal' },
+    { key: 'to_unit_name', header: 'Satuan Tujuan' },
     {
-      key: 'conversionValue',
+      key: 'conversion_value',
       header: 'Nilai Konversi',
       align: 'center',
-      render: (val) => String(val),
+      render: (row) => row.conversion_value,
     },
     {
-      key: 'actions', header: 'Aksi', align: 'center', width: '120px',
-      render: (_, row) => (
-        <div className="flex justify-center gap-2">
-          <button onClick={() => openEdit(row)} className="p-2 rounded bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors" title="Edit"><Edit2 size={14} /></button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-colors" title="Hapus"><Trash2 size={14} /></button>
+      key: 'actions',
+      header: 'Aksi',
+      align: 'center',
+      width: '120px',
+      render: (row) => (
+        <div className="flex justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => openEdit(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors"
+            title="Edit"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openDeleteConfirm(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+            title="Hapus"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <>
-      <ListTablePage
-        breadcrumbs={['Master', 'Konversi Satuan']}
-        subtitle="Kelola Konversi Satuan"
-        columns={columns}
-        data={dataWithIndex}
-        loading={isLoading}
-        emptyMessage="Tidak ada data konversi satuan"
-        pageSize={perPage}
-        currentPage={page}
-        totalData={total}
-        onPageChange={(p) => { setPage(p); loadConversions(p, search); }}
-        onRefresh={() => loadConversions(page, search)}
-        toolbarLeft={
-          <Input
-            placeholder="Cari..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch(search)}
-            className="w-64"
-          />
-        }
-        toolbarRight={
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">
-              Tambah +
-            </button>
-            <button onClick={() => downloadFile('/api/unit-conversions/excel', 'konversi.xlsx')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
-              <Download size={14} />
-            </button>
-          </div>
-        }
+    <div className="list-page">
+      {/* Header dengan Search */}
+      <div className="list-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari konversi..."
+          disabled={isLoading}
+        />
+        <button
+          className="list-page__refresh-btn"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <ActionToolbar
+        addLabel="Tambah"
+        onAddClick={openAdd}
+        showExportExcel
+        onExportExcel={handleDownloadExcel}
+        isLoading={isLoading || isDownloadingExcel}
       />
 
-      <FormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingConversion ? 'Ubah Konversi' : 'Tambah Konversi'}
-        submitLabel={editingConversion ? 'Simpan' : 'Tambahkan'}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
+      {/* Table */}
+      <div className="list-page__table-wrapper">
+        {isLoading ? (
+          <div className="list-page__loading">Memuat data...</div>
+        ) : (
+          <Table<ConversionRow>
+            columns={columns}
+            data={dataWithIndex}
+            emptyText="Tidak ada data konversi satuan"
+          />
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        title="Hapus Konversi"
         size="sm"
       >
-        <FormField label="Satuan Asal">
-          <Select
-            value={unitId}
-            onChange={(e) => setUnitId(e.target.value)}
-          >
-            <option value="">Pilih satuan...</option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="Satuan Tujuan">
-          <Select
-            value={convertToUnitId}
-            onChange={(e) => setConvertToUnitId(e.target.value)}
-          >
-            <option value="">Pilih satuan...</option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="Nilai Konversi">
-          <Input
-            type="number"
-            step="0.0001"
-            placeholder="Contoh: 1000"
-            value={conversionValue}
-            onChange={(e) => setConversionValue(e.target.value)}
-          />
-        </FormField>
-      </FormModal>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700">
+            Yakin menghapus konversi <strong>{deleteTarget?.from_unit_name} → {deleteTarget?.to_unit_name}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
+            <Button type="button" variant="danger" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Hapus Konversi"
-        message={`Yakin menghapus konversi ini?`}
-        isLoading={isDeleting}
+      {/* Edit / Add Modal */}
+      <Modal
+        open={isEditOpen}
+        onClose={closeEdit}
+        title={editingConversion ? 'Ubah Konversi' : 'Tambah Konversi'}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Satuan Asal</label>
+              <select
+                value={formData.unitId}
+                onChange={(e) => {
+                  setFormData({ ...formData, unitId: e.target.value });
+                  if (formErrors.unitId) setFormErrors({ ...formErrors, unitId: undefined });
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Pilih satuan...</option>
+                {units.map((u) => (
+                  <option key={u.id} value={String(u.id)}>{u.name}</option>
+                ))}
+              </select>
+              {formErrors.unitId && <p className="text-sm text-red-600 mt-1">{formErrors.unitId}</p>}
+            </div>
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Satuan Tujuan</label>
+              <select
+                value={formData.convertToUnitId}
+                onChange={(e) => {
+                  setFormData({ ...formData, convertToUnitId: e.target.value });
+                  if (formErrors.convertToUnitId) setFormErrors({ ...formErrors, convertToUnitId: undefined });
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Pilih satuan...</option>
+                {units.map((u) => (
+                  <option key={u.id} value={String(u.id)}>{u.name}</option>
+                ))}
+              </select>
+              {formErrors.convertToUnitId && <p className="text-sm text-red-600 mt-1">{formErrors.convertToUnitId}</p>}
+            </div>
+          </div>
+          <div>
+            <label className="block text-left text-xs text-slate-600 mb-1">Nilai Konversi</label>
+            <Input
+              type="number"
+              step="0.0001"
+              placeholder="Contoh: 1000"
+              value={formData.conversionValue}
+              onChange={(e) => {
+                setFormData({ ...formData, conversionValue: e.target.value });
+                if (formErrors.conversionValue) setFormErrors({ ...formErrors, conversionValue: undefined });
+              }}
+              aria-label="Nilai konversi"
+            />
+            {formErrors.conversionValue && <p className="text-sm text-red-600 mt-1">{formErrors.conversionValue}</p>}
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
+            <Button
+              type="submit"
+              variant={editingConversion ? 'outline' : 'primary'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Menyimpan...' : editingConversion ? 'Simpan' : 'Tambahkan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(p) => loadUnitConversions(p, activeSearch)}
       />
-    </>
+    </div>
   );
 }

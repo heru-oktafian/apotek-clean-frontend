@@ -1,50 +1,50 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Edit2, Trash2, RefreshCw, Search } from 'lucide-react'
-import { useAuth } from '../../auth/auth-context'
-import { useUsers } from '../hooks/useUsers'
-import { useToast, Table, Button, Input, Pagination, type TableColumn } from '../../../components/ui'
-import type { User } from '../types/users'
+import { useNavigate } from 'react-router-dom';
+import { Edit2, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../auth/auth-context';
+import { useUsers } from '../hooks/useUsers';
+import { toast, Table, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { useListSearch } from '../../../hooks/useListSearch';
+import type { User } from '../types/users';
 
 interface UserWithIndex extends User {
-  _index: number
+  _index: number;
 }
 
 export function UsersPage() {
-  const { activeToken, activeBranch } = useAuth()
-  const navigate = useNavigate()
-  const toast = useToast()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
+  const { activeToken, activeBranch } = useAuth();
+  const navigate = useNavigate();
 
-  const { users, total, page, perPage, isLoading, loadUsers } = useUsers(activeToken || '', activeBranch?.branch_id)
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
+    onSearch: (_search) => loadUsers(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
 
+  const { users, total, page, perPage, isLoading, loadUsers } = useUsers(
+    activeToken || '',
+    activeBranch?.branch_id
+  );
+
+  // ── Refresh ──────────────────────────────────────
+  const handleRefresh = () => {
+    loadUsers(page, activeSearch);
+  };
+
+  // ── Columns ────────────────────────────────────
   const usersWithIndex: UserWithIndex[] = users.map((user, index) => ({
     ...user,
     _index: index + 1,
-  }))
-
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }
-
-  const handleSearchSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    const normalized = searchQuery.trim()
-    setActiveSearch(normalized)
-    loadUsers(1, normalized)
-  }
-
-  const handleRefresh = () => {
-    loadUsers(page, activeSearch)
-  }
-
-  const handlePageChange = (nextPage: number) => {
-    loadUsers(nextPage, activeSearch)
-  }
+  }));
 
   const columns: TableColumn<UserWithIndex>[] = [
-    { key: '_index', header: 'No' },
+    {
+      key: '_index',
+      header: 'No',
+      align: 'center',
+      width: '60px',
+      render: (row) => row._index,
+    },
     { key: 'username', header: 'Username' },
     { key: 'name', header: 'Nama' },
     { key: 'user_role', header: 'Role' },
@@ -53,68 +53,74 @@ export function UsersPage() {
       key: 'actions',
       header: 'Aksi',
       align: 'center',
+      width: '100px',
       render: (row) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex justify-center gap-1">
           <button
             type="button"
             onClick={() => navigate(`/system/users/${row.id}`)}
-            className="inline-flex items-center justify-center p-2 rounded bg-amber-500 text-slate-900 hover:bg-amber-600 transition-colors"
+            className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors"
             title="Edit"
           >
-            <Edit2 size={16} />
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center p-2 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
-            title="Hapus"
-          >
-            <Trash2 size={16} />
+            <Edit2 size={14} />
           </button>
         </div>
       ),
     },
-  ]
+  ];
 
   return (
-    <section className="page-card">
-      <div className="units-page">
-        <div className="list-page__header">
-          <div className="list-page__search-group">
-            <form className="list-page__search-form" onSubmit={handleSearchSubmit}>
-              <Input
-                placeholder="Cari username atau nama..."
-                value={searchQuery}
-                onChange={handleSearchInput}
-                aria-label="Cari user"
-                className="list-page__search-input"
-              />
-              <button className="list-page__search-btn" type="submit">
-                <Search size={14} />
-                Cari
-              </button>
-            </form>
-            <button type="button" className="list-page__refresh-btn" onClick={handleRefresh} title="Refresh">
-              <RefreshCw size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div className="list-page__toolbar">
-          <button
-            type="button"
-            className="list-page__btn-tambah"
-            onClick={() => toast.addToast('Fungsi tambah user belum tersedia.', 'info')}
-          >
-            Tambah +
-          </button>
-        </div>
-
-        <div className="list-page__table-wrapper">
-          <Table columns={columns} data={usersWithIndex} emptyText={isLoading ? 'Memuat user...' : 'Tidak ada user'} />
-        </div>
-
-        <Pagination page={page} total={total} perPage={perPage} onPageChange={handlePageChange} onRefresh={handleRefresh} />
+    <div className="list-page">
+      {/* Header dengan Search */}
+      <div className="list-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari username atau nama..."
+          disabled={isLoading}
+        />
+        <button
+          className="list-page__refresh-btn"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+        </button>
       </div>
-    </section>
-  )
+
+      {/* Toolbar */}
+      <div className="list-page__toolbar">
+        <button
+          type="button"
+          className="list-page__btn-tambah"
+          onClick={() => toast.info('Fungsi tambah user belum tersedia.')}
+        >
+          Tambah +
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="list-page__table-wrapper">
+        {isLoading ? (
+          <div className="list-page__loading">Memuat data...</div>
+        ) : (
+          <Table<UserWithIndex>
+            columns={columns}
+            data={usersWithIndex}
+            emptyText="Tidak ada data user"
+          />
+        )}
+      </div>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(p) => loadUsers(p, activeSearch)}
+      />
+    </div>
+  );
 }

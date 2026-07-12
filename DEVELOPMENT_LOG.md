@@ -939,3 +939,79 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Status**: In Progress
 **Next Phase**: Complete remaining Master features (Products, Categories, etc)
 
+
+---
+
+### 12. Standarisasi UI 8 Halaman Master, Membership & User — Unified list-page Pattern
+**Tanggal**: 2026-07-12
+**File Utama**:
+- `src/features/units/pages/units-page.tsx`
+- `src/features/unit-conversions/pages/unit-conversions-page.tsx`
+- `src/features/suppliers/pages/supplier-categories-page.tsx`
+- `src/features/suppliers/pages/suppliers-page.tsx`
+- `src/features/member-categories/pages/member-categories-page.tsx`
+- `src/features/members/pages/members-page.tsx`
+- `src/features/users/pages/users-page.tsx`
+- `src/features/categories/pages/categories-page.tsx`
+- `src/index.css`
+
+**Referensi Style**: `src/features/products/pages/products-page.tsx` — Halaman produk TIDAK disentuh.
+
+**Perubahan**:
+
+1. **Pattern Unified (`list-page`)** diterapkan ke 8 halaman:
+   - Hapus wrapper lama (`<section.page-card>`, `<div.units-page>`, dll.)
+   - Ganti dengan `<div className="list-page">` + `<ListSearchBar>` + `<ActionToolbar>` + `<Table>` + `<Modal>` + `<Pagination>`
+   - Pakai `toast` dari `../../../components/ui` (bukan `useToast` / `toast.addToast()`)
+   - Pakai `useListSearch` hook untuk search state management
+   - Pakai `ListSearchBar` + `ActionToolbar` components
+
+2. **TypeScript Fixes**:
+   - `supplier-categories-page.tsx` — import dari `suppliers-api` → `supplier-categories-api`
+   - `suppliers-page.tsx` — `id` type `string | number` → `Number()` untuk API call
+   - `members-page.tsx` — row type `MemberRow.id` → `number | string`, payload field `categoryId` → `member_category_id`, dropdown `c.name` → `c.nama`, `variant="default"` → `"outline"`
+   - `member-categories-page.tsx` — full rewrite: field `name/discountPercentage` → `nama/pointsConversionRate`, payload sesuai `createMemberCategory` API signature, `variant="default"` → `"outline"`, local `currentPage` state (hook tidak expose `page`)
+   - `units-page.tsx` — `UnitRow.id` type `number` → `number | string`
+   - `unit-conversions-page.tsx` — `variant="default"` → `variant="outline"` pada 3 tombol (2 Edit + 1 Hapus)
+   - `categories-page.tsx` — hapus komponen lama (`ListTablePage`, `FormModal`, `ConfirmDialog`, `EmptyState`), rewrite penuh dengan pattern unified
+
+3. **UI Consistency**:
+   - Semua halaman pakai struktur: Header (search + refresh) → Toolbar (add + export) → Table → Pagination
+   - Toolbar buttons: `variant="outline"` untuk edit/simpan-edit, `variant="primary"` untuk tambah
+   - Delete buttons: `variant="danger"` atau custom inline style
+   - Modal forms pakai `Input` + `Modal` dari `components/ui`
+   - Toast notifications untuk success/error
+
+4. **categories-page.tsx (Kategori Produk)**:
+   - Rewrite dari komponen lama (`ListTablePage`, `FormModal`, `ConfirmDialog`) ke pattern unified
+   - Pakai `useListSearch` + `ListSearchBar` + `ActionToolbar` + `Table` + `Modal` + `Pagination`
+   - Payload API: `{ name, nama, product_category_name }` sesuai `createCategory` signature
+   - Tambah export Excel + PDF buttons
+   - Local `currentPage` state
+
+**Dampak**:
+- ✅ 8 halaman Master + Membership + User sekarang seragam pola UI-nya
+- ✅ Build TypeScript clean 0 errors
+- ✅ Mudah dikembangkan karena pattern konsisten
+- ✅ `products-page.tsx` tetap sebagai reference tidak disentuh
+
+**Catatan Penting — CRITICAL RULE CSS/LAYOUT**:
+> Abi hampir quit project karena CSS changes terus merusak dashboard layout.
+> Dashboard BREAK dari attempt dark→light theme (2026-06-27).
+> Lesson: HANYA sentuh API/TypeScript code. JANGAN sentuh CSS atau layout.
+> Jika ada yang break → `git checkout -- .` immediately.
+> **`products-page.tsx` = reference style, TIDAK disentuh.**
+
+**Decision Log**:
+| Aspek | Pilihan | Alasan |
+|-------|---------|--------|
+| Reference page | products-page.tsx | Sudah final, disepakati tidak diubah |
+| Toast import | `import { toast }` dari ui |的统一写法, bukan `useToast` |
+| Page state | Local `currentPage` untuk semua | Hook tidak selalu expose `page` |
+| Button variant | outline=edit, primary=tambah | Konsisten dengan design system |
+| Delete style | Custom inline atau danger variant | Tergantung komponen sudah ada |
+
+**Last Updated**: 2026-07-12 - UI Standardization Complete (8 pages)
+**Status**: ✅ Complete
+**Next Phase**: Testing & User Acceptance
+
