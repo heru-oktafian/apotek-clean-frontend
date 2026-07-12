@@ -2,15 +2,26 @@ import { apiRequest } from '../../../lib/api/client';
 import type { SuppliersResponse, SuppliersListParams, Supplier } from '../types/suppliers';
 import type { SupplierCategoriesResponse, SupplierCategoriesParams } from '../types/supplier-categories';
 
-// ── List Suppliers ───────────────────────────────────────────────────────────
-// GET /api/suppliers?page=1&search=...
-export const fetchSuppliers = async (token: string, params?: SuppliersListParams) => {
+// ── Fetch Suppliers ──────────────────────────────────────────────────────────
+/**
+ * Fetch a paginated list of suppliers with optional search.
+ *
+ * **HTTP:** `GET /api/suppliers`
+ *
+ * @param token  - Auth bearer token.
+ * @param params - Optional pagination and search params.
+ * @returns      Paginated list of suppliers.
+ */
+export async function fetchSuppliers(
+  token: string,
+  params?: SuppliersListParams
+): Promise<SuppliersResponse> {
   const queryParams = new URLSearchParams();
-  
+
   if (params?.page) {
     queryParams.append('page', String(params.page));
   }
-  
+
   if (params?.search) {
     queryParams.append('search', params.search);
   }
@@ -20,20 +31,39 @@ export const fetchSuppliers = async (token: string, params?: SuppliersListParams
 
   const res = await apiRequest<SuppliersResponse>(url, { token });
   return res;
-};
+}
+
+/** Payload for creating a new supplier. */
+export interface CreateSupplierPayload {
+  /** Full name or business name of the supplier. */
+  name: string;
+  /** Contact phone number. */
+  phone: string;
+  /** Physical address. */
+  address: string;
+  /** Numeric ID of the supplier category. */
+  categoryId: number;
+  /** Person in charge / contact person (optional). */
+  pic?: string;
+}
+
+/** Payload for updating an existing supplier. */
+export interface UpdateSupplierPayload extends CreateSupplierPayload {}
 
 // ── Create Supplier ──────────────────────────────────────────────────────────
-// POST /api/suppliers
-export const createSupplier = async (
+/**
+ * Create a new supplier/vendor.
+ *
+ * **HTTP:** `POST /api/suppliers`
+ *
+ * @param token - Auth bearer token.
+ * @param body  - Supplier creation payload.
+ * @returns     The newly created supplier object.
+ */
+export async function createSupplier(
   token: string,
-  body: {
-    name: string;
-    phone: string;
-    address: string;
-    categoryId: number;
-    pic?: string;
-  }
-) => {
+  body: CreateSupplierPayload
+): Promise<Supplier> {
   const url = '/api/suppliers';
   const res = await apiRequest<Supplier>(url, {
     token,
@@ -47,21 +77,24 @@ export const createSupplier = async (
     },
   });
   return res;
-};
+}
 
 // ── Update Supplier ──────────────────────────────────────────────────────────
-// PUT /api/suppliers/{id}
-export const updateSupplier = async (
+/**
+ * Update an existing supplier/vendor.
+ *
+ * **HTTP:** `PUT /api/suppliers/{id}`
+ *
+ * @param token - Auth bearer token.
+ * @param id    - ID of the supplier to update.
+ * @param body  - Supplier update payload.
+ * @returns     The updated supplier object.
+ */
+export async function updateSupplier(
   token: string,
   id: number,
-  body: {
-    name: string;
-    phone: string;
-    address: string;
-    categoryId: number;
-    pic?: string;
-  }
-) => {
+  body: UpdateSupplierPayload
+): Promise<Supplier> {
   const url = `/api/suppliers/${id}`;
   const res = await apiRequest<Supplier>(url, {
     token,
@@ -75,28 +108,52 @@ export const updateSupplier = async (
     },
   });
   return res;
-};
+}
 
 // ── Delete Supplier ──────────────────────────────────────────────────────────
-// DELETE /api/suppliers/{id}
-export const deleteSupplier = async (token: string, id: number) => {
+/**
+ * Delete a supplier by ID.
+ *
+ * **HTTP:** `DELETE /api/suppliers/{id}`
+ *
+ * @param token - Auth bearer token.
+ * @param id    - ID of the supplier to delete.
+ * @returns     API status response.
+ */
+export async function deleteSupplier(
+  token: string,
+  id: number
+): Promise<{ status: string; message: string }> {
   const url = `/api/suppliers/${id}`;
   const res = await apiRequest<{ status: string; message: string }>(url, { token, method: 'DELETE' });
   return res;
-};
+}
 
 // ── Fetch Supplier Categories ────────────────────────────────────────────────
-// GET /api/supplier-categories-combo?search=...
-export const fetchSupplierCategories = async (token: string, params?: SupplierCategoriesParams) => {
+/**
+ * Fetch supplier categories for dropdown/combo display.
+ *
+ * **HTTP:** `GET /api/supplier-categories-combo`
+ *
+ * @param token  - Auth bearer token.
+ * @param params - Optional search param.
+ * @returns      List of supplier categories.
+ */
+export async function fetchSupplierCategories(
+  token: string,
+  params?: SupplierCategoriesParams
+): Promise<SupplierCategoriesResponse> {
   const queryParams = new URLSearchParams();
-  
+
   if (params?.search) {
     queryParams.append('search', params.search);
   }
 
   const query = queryParams.toString();
-  const url = query ? `/api/supplier-categories-combo?${query}` : '/api/supplier-categories-combo';
+  const url = query
+    ? `/api/supplier-categories-combo?${query}`
+    : '/api/supplier-categories-combo';
 
   const res = await apiRequest<SupplierCategoriesResponse>(url, { token });
   return res;
-};
+}
