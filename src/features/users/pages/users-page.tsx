@@ -78,38 +78,38 @@ export function UsersPage() {
   return (
     <section className="page-card">
       <div className="units-page">
-        <div className="units-page__header">
-          <div className="units-page__search-group">
-            <form className="units-page__search-form" onSubmit={handleSearchSubmit}>
+        <div className="list-page__header">
+          <div className="list-page__search-group">
+            <form className="list-page__search-form" onSubmit={handleSearchSubmit}>
               <Input
                 placeholder="Cari username atau nama..."
                 value={searchQuery}
                 onChange={handleSearchInput}
                 aria-label="Cari user"
-                className="units-page__search-input"
+                className="list-page__search-input"
               />
-              <button className="units-page__search-btn" type="submit">
+              <button className="list-page__search-btn" type="submit">
                 <Search size={14} />
                 Cari
               </button>
             </form>
-            <button type="button" className="units-page__refresh-btn" onClick={handleRefresh} title="Refresh">
+            <button type="button" className="list-page__refresh-btn" onClick={handleRefresh} title="Refresh">
               <RefreshCw size={16} />
             </button>
           </div>
         </div>
 
-        <div className="units-page__toolbar">
+        <div className="list-page__toolbar">
           <button
             type="button"
-            className="units-page__btn-tambah"
+            className="list-page__btn-tambah"
             onClick={() => toast.addToast('Fungsi tambah user belum tersedia.', 'info')}
           >
             Tambah +
           </button>
         </div>
 
-        <div className="units-page__table-wrapper">
+        <div className="list-page__table-wrapper">
           <Table columns={columns} data={usersWithIndex} emptyText={isLoading ? 'Memuat user...' : 'Tidak ada user'} />
         </div>
 

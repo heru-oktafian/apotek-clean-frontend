@@ -6,25 +6,32 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  footer?: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
   if (!open) return null;
+
+  const sizeClass = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-2xl',
+    full: 'max-w-5xl',
+  }[size];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 overflow-visible z-50 ${
-          size === 'sm' ? 'max-w-sm' : size === 'md' ? 'max-w-md' : size === 'lg' ? 'max-w-lg' : 'max-w-2xl'
-        }`}
+        className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 overflow-visible z-50 ${sizeClass}`}
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -38,6 +45,11 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
           </div>
         )}
         <div className="p-6">{children}</div>
+        {footer && (
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

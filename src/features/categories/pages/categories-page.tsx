@@ -1,285 +1,199 @@
 import { useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Download } from 'lucide-react';
+import { Edit2, Trash2, Plus, Download } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { Button, Input, Modal, Pagination, useToast, Table, type TableColumn } from '../../../components/ui';
+import { useToast, Input, FormField } from '../../../components/ui';
 import { buildApiUrl } from '../../../lib/api/env';
 import { useCategories, type Category } from '../hooks/useCategories';
 import { createCategory, updateCategory, deleteCategory } from '../api/categories-api';
-import { ListSearchBar } from '../../../components/list/ListSearchBar';
-import { ActionToolbar } from '../../../components/list/ActionToolbar';
-import { useListSearch } from '../../../hooks/useListSearch';
+import { ListTablePage, type Column, formatCurrency } from '../../../components/ListTablePage';
+import { FormModal } from '../../../components/common/FormModal';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { EmptyState } from '../../../components/common/EmptyState';
 
 export function CategoriesPage() {
   const { activeToken } = useAuth();
   const toast = useToast();
 
-  // Search
-  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
-    onSearch: (_search) => loadCategories(1, _search),
-  });
-  const activeSearch = searchInput.trim().toLowerCase();
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const { categories, total, perPage, isLoading, loadCategories } = useCategories();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const { categories, page, setPage, perPage, total, isLoading, apiError, loadCategories } = useCategories();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const openAddCategory = () => {
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // ── Load ────────────────────────────────────────
+  const handleSearch = (s: string) => {
+    setSearch(s);
+    setPage(1);
+    loadCategories(1, s);
+  };
+
+  // ── Add / Edit ─────────────────────────────────
+  const openAdd = () => {
     setEditingCategory(null);
     setCategoryName('');
-    setErrors({});
     setModalOpen(true);
   };
 
-  const openEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setCategoryName(category.nama);
-    setErrors({});
+  const openEdit = (cat: Category) => {
+    setEditingCategory(cat);
+    setCategoryName(cat.nama);
     setModalOpen(true);
   };
 
-  const closeCategoryModal = () => {
-    setModalOpen(false);
-  };
-
-  const validateCategory = () => {
-    const e: Record<string, string> = {};
-    if (!categoryName.trim()) e.nama = 'Wajib diisi.';
-    return e;
-  };
-
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const validation = validateCategory();
-    if (Object.keys(validation).length) {
-      setErrors(validation);
+  const handleSubmit = async () => {
+    if (!categoryName.trim()) {
+      toast.addToast('Nama kategori wajib diisi.', 'error');
       return;
     }
-
     if (!activeToken) {
       toast.addToast('Token tidak tersedia, login ulang.', 'error');
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const body = { name: categoryName, nama: categoryName, product_category_name: categoryName };
-
       if (editingCategory) {
         await updateCategory(activeToken, editingCategory.id, body);
-        toast.addToast('Kategori produk berhasil diperbarui.', 'success');
+        toast.addToast('Kategori berhasil diperbarui.', 'success');
       } else {
         await createCategory(activeToken, body);
-        toast.addToast('Kategori produk berhasil ditambahkan.', 'success');
+        toast.addToast('Kategori berhasil ditambahkan.', 'success');
       }
-
       setModalOpen(false);
-      setEditingCategory(null);
-      setCategoryName('');
-      setErrors({});
-
-      void loadCategories(1, activeSearch);
-    } catch (error) {
-      console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal menyimpan kategori.', 'error');
+      loadCategories(page, search);
+    } catch (err) {
+      toast.addToast(err instanceof Error ? err.message : 'Gagal menyimpan.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const openDeleteConfirm = (category: Category) => {
-    setDeleteTarget(category);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const closeDeleteConfirm = () => {
-    setDeleteTarget(null);
-    setIsDeleteConfirmOpen(false);
-  };
-
-  const handleConfirmDeleteCategory = async () => {
-    if (!deleteTarget) return;
-
-    if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
-      return;
-    }
-
+  // ── Delete ──────────────────────────────────────
+  const handleDelete = (cat: Category) => setDeleteTarget(cat);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || !activeToken) return;
+    setIsDeleting(true);
     try {
       await deleteCategory(activeToken, deleteTarget.id);
-      toast.addToast('Kategori produk berhasil dihapus.', 'success');
-      closeDeleteConfirm();
-      void loadCategories(1, activeSearch);
-    } catch (error) {
-      console.error(error);
-      toast.addToast(error instanceof Error ? error.message : 'Gagal menghapus kategori.', 'error');
+      toast.addToast('Kategori berhasil dihapus.', 'success');
+      setDeleteTarget(null);
+      loadCategories(page, search);
+    } catch (err) {
+      toast.addToast(err instanceof Error ? err.message : 'Gagal menghapus.', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handlePageChange = (nextPage: number) => {
-    void loadCategories(nextPage, activeSearch);
-  };
-
-  const handleRefresh = () => {
-    void loadCategories(page, activeSearch);
-  };
-
+  // ── Download ────────────────────────────────────
   const downloadFile = async (path: string, defaultName: string) => {
-    if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
-      return;
-    }
-
+    if (!activeToken) { toast.addToast('Token tidak tersedia.', 'error'); return; }
     try {
-      const response = await fetch(buildApiUrl(path), {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${activeToken}`,
-          Accept: 'application/octet-stream, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, */*',
-        },
+      const res = await fetch(buildApiUrl(path), {
+        headers: { Authorization: `Bearer ${activeToken}`, Accept: '*/*' },
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Download gagal: ${response.status} - ${errorText}`);
-      }
-
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get('content-disposition') || '';
-      const filenameMatch = /filename\*=(?:UTF-8'')?([^;\n]+)|filename=(?:"?)([^";\n]+)(?:"?)/i.exec(contentDisposition);
-      const fileName = filenameMatch ? decodeURIComponent((filenameMatch[1] || filenameMatch[2]).trim()) : defaultName;
-      const blobUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = blobUrl;
-      anchor.download = fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error(error);
-      toast.addToast('Gagal mengunduh file. Cek koneksi atau endpoint.', 'error');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = defaultName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.addToast('Gagal mengunduh file.', 'error');
     }
   };
 
-  const handleDownloadExcel = async () => {
-    await downloadFile('/api/categories/excel', 'categories.xlsx');
-  };
-
-  const handleDownloadPDF = async () => {
-    await downloadFile('/api/categories/pdf', 'categories.pdf');
-  };
-
-  const columns: TableColumn<Category>[] = [
-    { key: 'id', header: 'ID' },
+  // ── Columns ────────────────────────────────────
+  const columns: Column<Category>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'nama', header: 'Nama Kategori' },
     {
-      key: 'actions',
-      header: 'Aksi',
-      align: 'center',
-      width: '120px',
-      render: (row) => (
-        <div className="flex gap-1 justify-center">
-          <button type="button" onClick={() => openEditCategory(row)} className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors" title="Edit">
-            <Edit2 size={14} />
-          </button>
-          <button type="button" onClick={() => openDeleteConfirm(row)} className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors" title="Hapus">
-            <Trash2 size={14} />
-          </button>
+      key: 'actions', header: 'Aksi', align: 'center', width: '120px',
+      render: (_, row) => (
+        <div className="flex justify-center gap-2">
+          <button onClick={() => openEdit(row)} className="p-2 rounded bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors" title="Edit"><Edit2 size={14} /></button>
+          <button onClick={() => handleDelete(row)} className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-colors" title="Hapus"><Trash2 size={14} /></button>
         </div>
       ),
     },
   ];
 
-  const startItem = total === 0 ? 0 : (page - 1) * perPage + 1;
-  const endItem = total === 0 ? 0 : Math.min(page * perPage, total);
+  const totalPages = Math.ceil(total / perPage);
 
   return (
-    <div className="categories-page">
-      {/* Header dengan Search */}
-      <div className="categories-page__header">
-        <ListSearchBar
-          value={searchInput}
-          onChange={handleSearchInputChange}
-          onSearch={handleSearch}
-          placeholder="Cari kategori..."
-          disabled={isLoading}
-        />
-        <div className="categories-page__header-actions">
-          <button
-            className="categories-page__refresh-btn"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            title="Refresh"
-          >
-            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-          </button>
-        </div>
-      </div>
-
-      {/* Toolbar - Tambah dan Download */}
-      <div className="categories-page__toolbar">
-        <button className="categories-page__btn-tambah" onClick={openAddCategory}>
-          Tambah +
-        </button>
-        <div className="categories-page__toolbar-downloads">
-          <button
-            className="categories-page__download-btn categories-page__download-btn--excel"
-            onClick={handleDownloadExcel}
-            disabled={isLoading}
-            title="Download Excel"
-          >
-            <Download size={14} />
-            Excel
-          </button>
-          <button
-            className="categories-page__download-btn categories-page__download-btn--pdf"
-            onClick={handleDownloadPDF}
-            disabled={isLoading}
-            title="Download PDF"
-          >
-            <Download size={14} />
-            PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="categories-page__table-wrapper">
-        {apiError ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{apiError}</div> : null}
-        <Table columns={columns} data={categories} emptyText={isLoading ? 'Memuat data...' : 'Tidak ada kategori produk'} />
-      </div>
-
-      <Modal open={modalOpen} onClose={closeCategoryModal} title={editingCategory ? 'Ubah Kategori Produk' : 'Tambah Kategori Produk'} size="sm">
-        <form onSubmit={handleCategorySubmit} className="space-y-4">
-          <div>
-            <Input placeholder="Nama kategori" value={categoryName} onChange={(e) => { setCategoryName(e.target.value); setErrors((prev) => ({ ...prev, nama: '' })); }} aria-label="Nama kategori" />
-            {errors.nama && <p className="text-sm text-red-600 mt-1">{errors.nama}</p>}
+    <>
+      <ListTablePage
+        breadcrumbs={['Master', 'Kategori']}
+        subtitle="Kelola Kategori Produk"
+        columns={columns}
+        data={categories}
+        loading={isLoading}
+        emptyMessage="Tidak ada kategori produk"
+        pageSize={perPage}
+        currentPage={page}
+        totalData={total}
+        onPageChange={(p) => { setPage(p); loadCategories(p, search); }}
+        onRefresh={() => loadCategories(page, search)}
+        toolbarLeft={
+          <Input
+            placeholder="Cari kategori..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch(search)}
+            className="w-64"
+          />
+        }
+        toolbarRight={
+          <div className="flex gap-2">
+            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">
+              Tambah +
+            </button>
+            <button onClick={() => downloadFile('/api/categories/excel', 'kategori.xlsx')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
+              <Download size={14} />
+            </button>
+            <button onClick={() => downloadFile('/api/categories/pdf', 'kategori.pdf')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
+              PDF
+            </button>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={closeCategoryModal}>Batal</Button>
-            <Button type="submit" variant="primary" className={editingCategory ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-green-600 hover:bg-green-700 text-white'}>
-              {editingCategory ? 'Simpan' : 'Tambahkan'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal open={isDeleteConfirmOpen} onClose={closeDeleteConfirm} title="Hapus Kategori Produk" size="sm">
-        <div className="space-y-4">
-          <p className="text-sm text-slate-700">Yakin ingin menghapus kategori <strong>{deleteTarget?.nama}</strong>?</p>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
-            <Button type="button" variant="danger" onClick={handleConfirmDeleteCategory}>Hapus</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Pagination
-        page={page}
-        total={total}
-        perPage={perPage}
-        onPageChange={handlePageChange}
+        }
       />
-    </div>
+
+      <FormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingCategory ? 'Ubah Kategori' : 'Tambah Kategori'}
+        submitLabel={editingCategory ? 'Simpan' : 'Tambahkan'}
+        submitVariant={editingCategory ? 'primary' : 'primary'}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        size="sm"
+      >
+        <FormField label="Nama Kategori">
+          <Input
+            placeholder="Masukkan nama kategori"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+            autoFocus
+          />
+        </FormField>
+      </FormModal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Kategori"
+        message={`Yakin menghapus kategori "${deleteTarget?.nama}"?`}
+        isLoading={isDeleting}
+      />
+    </>
   );
 }

@@ -3,45 +3,41 @@ import { Search } from 'lucide-react';
 interface ListSearchBarProps {
   value: string;
   onChange: (value: string) => void;
-  onSearch: () => void;
-  disabled?: boolean;
-  isLoading?: boolean;
+  onSearch: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function ListSearchBar({
   value,
   onChange,
   onSearch,
-  disabled,
-  isLoading,
   placeholder = 'Cari...',
+  disabled = false,
 }: ListSearchBarProps) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(value);
+  };
+
   return (
-    <div className="products-page__search-group">
-      <form
-        className="products-page__search-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSearch();
-        }}
-      >
+    <div className="list-page__search-group">
+      <form className="list-page__search-form" onSubmit={handleSubmit}>
         <input
           type="text"
-          className="products-page__search-input"
-          placeholder={placeholder}
+          className="list-page__search-input"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          placeholder={placeholder}
+          disabled={disabled}
+          aria-label={placeholder}
         />
         <button
-          className="products-page__search-btn"
           type="submit"
-          disabled={disabled || isLoading}
-          title="Cari"
+          className="list-page__search-btn"
+          disabled={disabled}
         >
           <Search size={14} />
-          <span>Cari</span>
         </button>
       </form>
     </div>

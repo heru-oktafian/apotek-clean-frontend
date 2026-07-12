@@ -30,12 +30,22 @@ export const createSupplier = async (
     name: string;
     phone: string;
     address: string;
-    supplier_category_id: number;
+    categoryId: number;
     pic?: string;
   }
 ) => {
   const url = '/api/suppliers';
-  const res = await apiRequest<Supplier>(url, { token, method: 'POST', body });
+  const res = await apiRequest<Supplier>(url, {
+    token,
+    method: 'POST',
+    body: {
+      name: body.name,
+      phone: body.phone,
+      address: body.address,
+      supplier_category_id: body.categoryId,
+      pic: body.pic,
+    },
+  });
   return res;
 };
 
@@ -43,23 +53,33 @@ export const createSupplier = async (
 // PUT /api/suppliers/{id}
 export const updateSupplier = async (
   token: string,
-  id: string,
+  id: number,
   body: {
     name: string;
     phone: string;
     address: string;
-    supplier_category_id: number;
+    categoryId: number;
     pic?: string;
   }
 ) => {
   const url = `/api/suppliers/${id}`;
-  const res = await apiRequest<Supplier>(url, { token, method: 'PUT', body });
+  const res = await apiRequest<Supplier>(url, {
+    token,
+    method: 'PUT',
+    body: {
+      name: body.name,
+      phone: body.phone,
+      address: body.address,
+      supplier_category_id: body.categoryId,
+      pic: body.pic,
+    },
+  });
   return res;
 };
 
 // ── Delete Supplier ──────────────────────────────────────────────────────────
 // DELETE /api/suppliers/{id}
-export const deleteSupplier = async (token: string, id: string) => {
+export const deleteSupplier = async (token: string, id: number) => {
   const url = `/api/suppliers/${id}`;
   const res = await apiRequest<{ status: string; message: string }>(url, { token, method: 'DELETE' });
   return res;

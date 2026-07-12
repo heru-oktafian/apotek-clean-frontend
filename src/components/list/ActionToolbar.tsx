@@ -1,5 +1,4 @@
 import { Plus, Download } from 'lucide-react';
-import { Button } from '../ui';
 
 interface ActionToolbarProps {
   addLabel: string;
@@ -21,10 +20,10 @@ export function ActionToolbar({
   isLoading = false,
 }: ActionToolbarProps) {
   return (
-    <div className="units-page__toolbar">
+    <div className="list-page__toolbar">
       <button
         type="button"
-        className="units-page__btn-tambah"
+        className="list-page__btn-tambah"
         onClick={onAddClick}
         disabled={isLoading}
       >
@@ -34,11 +33,11 @@ export function ActionToolbar({
 
       <div className="flex-1" />
 
-      <div className="units-page__download-group">
+      <div className="flex items-center gap-3">
         {showExportExcel && (
           <button
             type="button"
-            className="units-page__btn-download units-page__btn-download--excel"
+            className="list-page__btn-download"
             onClick={onExportExcel}
             title="Download Excel"
             disabled={isLoading}
@@ -50,7 +49,7 @@ export function ActionToolbar({
         {showExportPdf && (
           <button
             type="button"
-            className="units-page__btn-download units-page__btn-download--pdf"
+            className="list-page__btn-download"
             onClick={onExportPdf}
             title="Download PDF"
             disabled={isLoading}

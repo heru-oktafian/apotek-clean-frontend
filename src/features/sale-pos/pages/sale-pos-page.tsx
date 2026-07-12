@@ -47,22 +47,22 @@ export function SalePosPage() {
 
   return (
     <div className="units-page">
-      <div className="units-page__header">
-        <div className="units-page__search-group">
-          <div className="units-page__search-form">
-            <Input placeholder="Cari penjualan..." className="units-page__search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} aria-label="Cari penjualan" />
-            <button className="units-page__search-btn" type="button">
+      <div className="list-page__header">
+        <div className="list-page__search-group">
+          <div className="list-page__search-form">
+            <Input placeholder="Cari penjualan..." className="list-page__search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} aria-label="Cari penjualan" />
+            <button className="list-page__search-btn" type="button">
               <Search size={14} />
               Cari
             </button>
           </div>
-          <button type="button" className="units-page__refresh-btn" title="Refresh" onClick={() => toast.addToast('Data transaksi disegarkan.', 'success')}>
+          <button type="button" className="list-page__refresh-btn" title="Refresh" onClick={() => toast.addToast('Data transaksi disegarkan.', 'success')}>
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
 
-      <div className="units-page__table-wrapper">
+      <div className="list-page__table-wrapper">
         <Table columns={columns} data={filteredTransactions} emptyText="Tidak ada transaksi" />
       </div>
     </div>

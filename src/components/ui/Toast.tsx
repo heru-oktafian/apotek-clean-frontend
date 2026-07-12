@@ -44,7 +44,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Stub for any code that imports `toast` directly
 export const toast = {
+  addToast: (_message: string, _type?: Toast['type']) => {},
   success: (_message: string) => {},
   error: (_message: string) => {},
   info: (_message: string) => {},
