@@ -1,230 +1,336 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { useToast, Input, FormField } from '../../../components/ui';
-import { buildApiUrl } from '../../../lib/api/env';
 import { useMemberCategories } from '../hooks/useMemberCategories';
 import { createMemberCategory, updateMemberCategory, deleteMemberCategory } from '../api/member-categories-api';
-import { ListTablePage, type Column } from '../../../components/ListTablePage';
-import { FormModal } from '../../../components/common/FormModal';
-import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { buildApiUrl } from '../../../lib/api/env';
+import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
+import { useListSearch } from '../../../hooks/useListSearch';
 
 interface MemberCategoryRow {
-  _index: number;
-  id?: number;
-  name: string;
-  discountPercentage?: number;
+  _index?: number;
+  id: number;
+  nama: string;
+  pointsConversionRate: number;
+  branchId: string;
+}
+
+interface MemberCategoryFormData {
+  nama: string;
+  pointsConversionRate: string;
 }
 
 export function MemberCategoriesPage() {
   const { activeToken } = useAuth();
-  const toast = useToast();
 
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const { categories, total, perPage, isLoading, loadMemberCategories } = useMemberCategories(activeToken || '');
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
+    onSearch: (_search) => loadMemberCategories(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const { categories, total, perPage, isLoading, loadMemberCategories } = useMemberCategories();
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Modal state
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MemberCategoryRow | null>(null);
-  const [categoryName, setCategoryName] = useState('');
-  const [discountPercentage, setDiscountPercentage] = useState('');
+  const [formData, setFormData] = useState<MemberCategoryFormData>({
+    nama: '',
+    pointsConversionRate: '',
+  });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof MemberCategoryFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete state
   const [deleteTarget, setDeleteTarget] = useState<MemberCategoryRow | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ── Load ────────────────────────────────────────
-  const handleSearch = (s: string) => {
-    setSearch(s);
-    setPage(1);
-    loadMemberCategories(1, s);
+  // Download state
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+
+  // ── Refresh ──────────────────────────────────────
+  const handleRefresh = () => {
+    loadMemberCategories(currentPage, activeSearch);
   };
 
   // ── Add / Edit ─────────────────────────────────
   const openAdd = () => {
     setEditingCategory(null);
-    setCategoryName('');
-    setDiscountPercentage('');
-    setModalOpen(true);
+    setFormData({ nama: '', pointsConversionRate: '' });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
   const openEdit = (cat: MemberCategoryRow) => {
     setEditingCategory(cat);
-    setCategoryName(cat.name);
-    setDiscountPercentage(cat.discountPercentage !== undefined ? String(cat.discountPercentage) : '');
-    setModalOpen(true);
+    setFormData({
+      nama: cat.nama,
+      pointsConversionRate: String(cat.pointsConversionRate),
+    });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!categoryName.trim()) {
-      toast.addToast('Nama kategori wajib diisi.', 'error');
+  const closeEdit = () => {
+    setEditingCategory(null);
+    setIsEditOpen(false);
+    setFormData({ nama: '', pointsConversionRate: '' });
+    setFormErrors({});
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.nama.trim()) {
+      setFormErrors({ nama: 'Nama kategori wajib diisi.' });
+      toast.error('Nama kategori wajib diisi.');
       return;
     }
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const body = {
-        name: categoryName,
-        discountPercentage: discountPercentage ? parseFloat(discountPercentage) : undefined,
+        name: formData.nama,
+        nama: formData.nama,
+        points_conversion_rate: formData.pointsConversionRate ? parseFloat(formData.pointsConversionRate) : 0,
+        pointsConversionRate: formData.pointsConversionRate ? parseFloat(formData.pointsConversionRate) : 0,
+        branch_id: '1',
+        branchId: '1',
       };
       if (editingCategory?.id) {
         await updateMemberCategory(activeToken, editingCategory.id, body);
-        toast.addToast('Kategori member berhasil diperbarui.', 'success');
+        toast.success('Kategori member berhasil diperbarui.');
       } else {
         await createMemberCategory(activeToken, body);
-        toast.addToast('Kategori member berhasil ditambahkan.', 'success');
+        toast.success('Kategori member berhasil ditambahkan.');
       }
-      setModalOpen(false);
-      loadMemberCategories(page, search);
+      closeEdit();
+      loadMemberCategories(1, activeSearch);
     } catch {
-      toast.addToast('Gagal menyimpan kategori.', 'error');
+      toast.error('Gagal menyimpan kategori.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ── Delete ──────────────────────────────────────
-  const handleDelete = (cat: MemberCategoryRow) => setDeleteTarget(cat);
+  const openDeleteConfirm = (cat: MemberCategoryRow) => {
+    setDeleteTarget(cat);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteTarget(null);
+    setIsDeleteConfirmOpen(false);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget?.id || !activeToken) return;
+
     setIsDeleting(true);
     try {
       await deleteMemberCategory(activeToken, deleteTarget.id);
-      toast.addToast('Kategori member berhasil dihapus.', 'success');
-      setDeleteTarget(null);
-      loadMemberCategories(page, search);
+      toast.success('Kategori member berhasil dihapus.');
+      closeDeleteConfirm();
+      loadMemberCategories(currentPage, activeSearch);
     } catch {
-      toast.addToast('Gagal menghapus kategori.', 'error');
+      toast.error('Gagal menghapus kategori.');
     } finally {
       setIsDeleting(false);
     }
   };
 
   // ── Download ────────────────────────────────────
-  const downloadFile = async (path: string, defaultName: string) => {
-    if (!activeToken) { toast.addToast('Token tidak tersedia.', 'error'); return; }
+  const handleDownloadExcel = async () => {
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
+    setIsDownloadingExcel(true);
     try {
-      const res = await fetch(buildApiUrl(path), {
+      const res = await fetch(buildApiUrl('/api/member-categories/excel'), {
         headers: { Authorization: `Bearer ${activeToken}`, Accept: '*/*' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = defaultName;
+      a.download = 'kategori-member.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
+      toast.success('Excel berhasil diunduh.');
     } catch {
-      toast.addToast('Gagal mengunduh file.', 'error');
+      toast.error('Gagal mengunduh Excel.');
+    } finally {
+      setIsDownloadingExcel(false);
     }
   };
 
   // ── Columns ────────────────────────────────────
   const dataWithIndex: MemberCategoryRow[] = categories.map((c, i) => ({ ...c, _index: i }));
-  const columns: Column<MemberCategoryRow>[] = [
+  const columns: TableColumn<MemberCategoryRow>[] = [
     {
       key: 'no',
       header: 'No',
       align: 'center',
       width: '60px',
-      render: (_, row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
+      render: (row) => (row._index ?? 0) + 1 + (currentPage - 1) * perPage,
     },
-    { key: 'name', header: 'Nama Kategori' },
+    { key: 'nama', header: 'Nama Kategori' },
     {
-      key: 'discountPercentage',
-      header: 'Diskon (%)',
+      key: 'pointsConversionRate',
+      header: 'Rate Poin',
       align: 'center',
-      render: (val) => (val !== undefined && val !== null ? `${val}%` : '-'),
+      render: (row) => (row.pointsConversionRate !== undefined && row.pointsConversionRate !== null ? `${row.pointsConversionRate}` : '-'),
     },
     {
-      key: 'actions', header: 'Aksi', align: 'center', width: '120px',
-      render: (_, row) => (
-        <div className="flex justify-center gap-2">
-          <button onClick={() => openEdit(row)} className="p-2 rounded bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors" title="Edit"><Edit2 size={14} /></button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-colors" title="Hapus"><Trash2 size={14} /></button>
+      key: 'actions',
+      header: 'Aksi',
+      align: 'center',
+      width: '120px',
+      render: (row) => (
+        <div className="flex justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => openEdit(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors"
+            title="Edit"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openDeleteConfirm(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+            title="Hapus"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <>
-      <ListTablePage
-        breadcrumbs={['Membership', 'Kategori Member']}
-        subtitle="Kelola Kategori Member"
-        columns={columns}
-        data={dataWithIndex}
-        loading={isLoading}
-        emptyMessage="Tidak ada data kategori member"
-        pageSize={perPage}
-        currentPage={page}
-        totalData={total}
-        onPageChange={(p) => { setPage(p); loadMemberCategories(p, search); }}
-        onRefresh={() => loadMemberCategories(page, search)}
-        toolbarLeft={
-          <Input
-            placeholder="Cari kategori..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch(search)}
-            className="w-64"
-          />
-        }
-        toolbarRight={
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">
-              Tambah +
-            </button>
-            <button onClick={() => downloadFile('/api/member-categories/excel', 'kategori-member.xlsx')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
-              <Download size={14} />
-            </button>
-          </div>
-        }
+    <div className="list-page">
+      {/* Header dengan Search */}
+      <div className="list-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari kategori..."
+          disabled={isLoading}
+        />
+        <button
+          className="list-page__refresh-btn"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <ActionToolbar
+        addLabel="Tambah"
+        onAddClick={openAdd}
+        showExportExcel
+        onExportExcel={handleDownloadExcel}
+        isLoading={isLoading || isDownloadingExcel}
       />
 
-      <FormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingCategory ? 'Ubah Kategori Member' : 'Tambah Kategori Member'}
-        submitLabel={editingCategory ? 'Simpan' : 'Tambahkan'}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
+      {/* Table */}
+      <div className="list-page__table-wrapper">
+        {isLoading ? (
+          <div className="list-page__loading">Memuat data...</div>
+        ) : (
+          <Table<MemberCategoryRow>
+            columns={columns}
+            data={dataWithIndex}
+            emptyText="Tidak ada data kategori member"
+          />
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        title="Hapus Kategori Member"
         size="sm"
       >
-        <FormField label="Nama Kategori">
-          <Input
-            placeholder="Masukkan nama kategori"
-            value={categoryName}
-            onChange={(e) => setCategoryName(e.target.value)}
-            autoFocus
-          />
-        </FormField>
-        <FormField label="Diskon (%)">
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            placeholder="Contoh: 10"
-            value={discountPercentage}
-            onChange={(e) => setDiscountPercentage(e.target.value)}
-          />
-          <p className="text-xs text-slate-400">Opsional. Persentase diskon untuk kategori ini.</p>
-        </FormField>
-      </FormModal>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700">
+            Yakin menghapus kategori <strong>{deleteTarget?.nama}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
+            <Button type="button" variant="danger" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Hapus Kategori Member"
-        message={`Yakin menghapus kategori "${deleteTarget?.name}"?`}
-        isLoading={isDeleting}
+      {/* Edit / Add Modal */}
+      <Modal
+        open={isEditOpen}
+        onClose={closeEdit}
+        title={editingCategory ? 'Ubah Kategori Member' : 'Tambah Kategori Member'}
+        size="sm"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Input
+              placeholder="Nama kategori"
+              value={formData.nama}
+              onChange={(e) => {
+                setFormData({ ...formData, nama: e.target.value });
+                if (formErrors.nama) setFormErrors({ ...formErrors, nama: undefined });
+              }}
+              aria-label="Nama kategori"
+            />
+            {formErrors.nama && <p className="text-sm text-red-600 mt-1">{formErrors.nama}</p>}
+          </div>
+          <div>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Contoh: 10"
+              value={formData.pointsConversionRate}
+              onChange={(e) => setFormData({ ...formData, pointsConversionRate: e.target.value })}
+              aria-label="Rate Poin"
+            />
+            <p className="text-xs text-slate-400 mt-1">Rate konversi poin untuk kategori ini.</p>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
+            <Button
+              type="submit"
+              variant={editingCategory ? 'outline' : 'primary'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Menyimpan...' : editingCategory ? 'Simpan' : 'Tambahkan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Pagination */}
+      <Pagination
+        page={currentPage}
+        total={total}
+        perPage={perPage}
+        onPageChange={(p) => { setCurrentPage(p); loadMemberCategories(p, activeSearch); }}
       />
-    </>
+    </div>
   );
 }

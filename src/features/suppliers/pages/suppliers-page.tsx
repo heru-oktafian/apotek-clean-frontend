@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
-import { useToast, Input, Select } from '../../../components/ui';
-import { buildApiUrl } from '../../../lib/api/env';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { useSupplierCategories } from '../hooks/useSupplierCategories';
-import { FormField } from '../../../components/ui';
 import { createSupplier, updateSupplier, deleteSupplier } from '../api/suppliers-api';
-import { ListTablePage, type Column, formatCurrency } from '../../../components/ListTablePage';
-import { FormModal } from '../../../components/common/FormModal';
+import { buildApiUrl } from '../../../lib/api/env';
+import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { ListSearchBar } from '../../../components/list/ListSearchBar';
+import { ActionToolbar } from '../../../components/list/ActionToolbar';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { useListSearch } from '../../../hooks/useListSearch';
 
 interface SupplierRow {
-  _index: number;
-  id: number;
+  _index?: number;
+  id: number | string;
   name: string;
   phone?: string;
   address?: string;
@@ -28,235 +28,346 @@ interface SupplierFormData {
   categoryId: string;
 }
 
-const initialForm: SupplierFormData = { name: '', phone: '', address: '', categoryId: '' };
-
 export function SuppliersPage() {
   const { activeToken } = useAuth();
-  const toast = useToast();
 
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const { suppliers, total, perPage, isLoading, loadSuppliers } = useSuppliers(activeToken || '');
+  // Search
+  const { searchInput, handleSearchInputChange, handleSearch } = useListSearch({
+    onSearch: (_search) => loadSuppliers(1, _search),
+  });
+  const activeSearch = searchInput.trim().toLowerCase();
+
+  const { suppliers, total, page, perPage, isLoading, loadSuppliers } = useSuppliers(activeToken || '');
   const { categories } = useSupplierCategories(activeToken || '');
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // Modal state
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(null);
-  const [form, setForm] = useState<SupplierFormData>(initialForm);
+  const [formData, setFormData] = useState<SupplierFormData>({
+    name: '',
+    phone: '',
+    address: '',
+    categoryId: '',
+  });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof SupplierFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete state
   const [deleteTarget, setDeleteTarget] = useState<SupplierRow | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const setField = (field: keyof SupplierFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
+  // Download state
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
 
-  // ── Load ────────────────────────────────────────
-  const handleSearch = (s: string) => {
-    setSearch(s);
-    setPage(1);
-    loadSuppliers(1, s);
+  // ── Refresh ──────────────────────────────────────
+  const handleRefresh = () => {
+    loadSuppliers(page, activeSearch);
   };
 
   // ── Add / Edit ─────────────────────────────────
   const openAdd = () => {
     setEditingSupplier(null);
-    setForm(initialForm);
-    setModalOpen(true);
+    setFormData({ name: '', phone: '', address: '', categoryId: '' });
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
   const openEdit = (sup: SupplierRow) => {
     setEditingSupplier(sup);
-    setForm({
+    setFormData({
       name: sup.name,
       phone: sup.phone ?? '',
       address: sup.address ?? '',
       categoryId: String(sup.supplier_category_id ?? ''),
     });
-    setModalOpen(true);
+    setFormErrors({});
+    setIsEditOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.addToast('Nama supplier wajib diisi.', 'error');
+  const closeEdit = () => {
+    setEditingSupplier(null);
+    setIsEditOpen(false);
+    setFormData({ name: '', phone: '', address: '', categoryId: '' });
+    setFormErrors({});
+  };
+
+  const validateForm = () => {
+    const errors: Partial<Record<keyof SupplierFormData, string>> = {};
+    if (!formData.name.trim()) errors.name = 'Nama supplier wajib diisi.';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Periksa kembali form supplier.');
       return;
     }
     if (!activeToken) {
-      toast.addToast('Token tidak tersedia, login ulang.', 'error');
+      toast.error('Token tidak tersedia, login ulang.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      if (!formData.categoryId) {
+        toast.error('Kategori supplier wajib dipilih.');
+        return;
+      }
       const body = {
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
-        categoryId: form.categoryId ? Number(form.categoryId) : undefined,
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        categoryId: Number(formData.categoryId),
       };
       if (editingSupplier?.id) {
-        await updateSupplier(activeToken, editingSupplier.id, body);
-        toast.addToast('Supplier berhasil diperbarui.', 'success');
+        await updateSupplier(activeToken, Number(editingSupplier.id), body);
+        toast.success('Supplier berhasil diperbarui.');
       } else {
         await createSupplier(activeToken, body);
-        toast.addToast('Supplier berhasil ditambahkan.', 'success');
+        toast.success('Supplier berhasil ditambahkan.');
       }
-      setModalOpen(false);
-      loadSuppliers(page, search);
+      closeEdit();
+      loadSuppliers(1, activeSearch);
     } catch {
-      toast.addToast('Gagal menyimpan supplier.', 'error');
+      toast.error('Gagal menyimpan supplier.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ── Delete ──────────────────────────────────────
-  const handleDelete = (sup: SupplierRow) => setDeleteTarget(sup);
+  const openDeleteConfirm = (sup: SupplierRow) => {
+    setDeleteTarget(sup);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteTarget(null);
+    setIsDeleteConfirmOpen(false);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget?.id || !activeToken) return;
+
     setIsDeleting(true);
     try {
-      await deleteSupplier(activeToken, deleteTarget.id);
-      toast.addToast('Supplier berhasil dihapus.', 'success');
-      setDeleteTarget(null);
-      loadSuppliers(page, search);
+      await deleteSupplier(activeToken, Number(deleteTarget.id));
+      toast.success('Supplier berhasil dihapus.');
+      closeDeleteConfirm();
+      loadSuppliers(page, activeSearch);
     } catch {
-      toast.addToast('Gagal menghapus supplier.', 'error');
+      toast.error('Gagal menghapus supplier.');
     } finally {
       setIsDeleting(false);
     }
   };
 
   // ── Download ────────────────────────────────────
-  const downloadFile = async (path: string, defaultName: string) => {
-    if (!activeToken) { toast.addToast('Token tidak tersedia.', 'error'); return; }
+  const handleDownloadExcel = async () => {
+    if (!activeToken) { toast.error('Token tidak tersedia.'); return; }
+    setIsDownloadingExcel(true);
     try {
-      const res = await fetch(buildApiUrl(path), {
+      const res = await fetch(buildApiUrl('/api/suppliers/excel'), {
         headers: { Authorization: `Bearer ${activeToken}`, Accept: '*/*' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = defaultName;
+      a.download = 'supplier.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
+      toast.success('Excel berhasil diunduh.');
     } catch {
-      toast.addToast('Gagal mengunduh file.', 'error');
+      toast.error('Gagal mengunduh Excel.');
+    } finally {
+      setIsDownloadingExcel(false);
     }
   };
 
   // ── Columns ────────────────────────────────────
   const dataWithIndex: SupplierRow[] = suppliers.map((s, i) => ({ ...s, _index: i }));
-  const columns: Column<SupplierRow>[] = [
+  const columns: TableColumn<SupplierRow>[] = [
     {
       key: 'no',
       header: 'No',
       align: 'center',
       width: '60px',
-      render: (_, row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
+      render: (row) => (row._index ?? 0) + 1 + (page - 1) * perPage,
     },
     { key: 'name', header: 'Nama Supplier' },
     { key: 'phone', header: 'Telepon' },
     { key: 'address', header: 'Alamat' },
     { key: 'supplier_category', header: 'Kategori' },
     {
-      key: 'actions', header: 'Aksi', align: 'center', width: '120px',
-      render: (_, row) => (
-        <div className="flex justify-center gap-2">
-          <button onClick={() => openEdit(row)} className="p-2 rounded bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors" title="Edit"><Edit2 size={14} /></button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-colors" title="Hapus"><Trash2 size={14} /></button>
+      key: 'actions',
+      header: 'Aksi',
+      align: 'center',
+      width: '120px',
+      render: (row) => (
+        <div className="flex justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => openEdit(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded transition-colors"
+            title="Edit"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openDeleteConfirm(row)}
+            className="inline-flex items-center justify-center p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+            title="Hapus"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <>
-      <ListTablePage
-        breadcrumbs={['Master', 'Supplier']}
-        subtitle="Kelola Data Supplier"
-        columns={columns}
-        data={dataWithIndex}
-        loading={isLoading}
-        emptyMessage="Tidak ada data supplier"
-        pageSize={perPage}
-        currentPage={page}
-        totalData={total}
-        onPageChange={(p) => { setPage(p); loadSuppliers(p, search); }}
-        onRefresh={() => loadSuppliers(page, search)}
-        toolbarLeft={
-          <Input
-            placeholder="Cari supplier..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch(search)}
-            className="w-64"
-          />
-        }
-        toolbarRight={
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">
-              Tambah +
-            </button>
-            <button onClick={() => downloadFile('/api/suppliers/excel', 'supplier.xlsx')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
-              <Download size={14} />
-            </button>
-          </div>
-        }
+    <div className="list-page">
+      {/* Header dengan Search */}
+      <div className="list-page__header">
+        <ListSearchBar
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onSearch={handleSearch}
+          placeholder="Cari supplier..."
+          disabled={isLoading}
+        />
+        <button
+          className="list-page__refresh-btn"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <ActionToolbar
+        addLabel="Tambah"
+        onAddClick={openAdd}
+        showExportExcel
+        onExportExcel={handleDownloadExcel}
+        isLoading={isLoading || isDownloadingExcel}
       />
 
-      <FormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+      {/* Table */}
+      <div className="list-page__table-wrapper">
+        {isLoading ? (
+          <div className="list-page__loading">Memuat data...</div>
+        ) : (
+          <Table<SupplierRow>
+            columns={columns}
+            data={dataWithIndex}
+            emptyText="Tidak ada data supplier"
+          />
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        title="Hapus Supplier"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700">
+            Yakin menghapus supplier <strong>{deleteTarget?.name}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
+            <Button type="button" variant="danger" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit / Add Modal */}
+      <Modal
+        open={isEditOpen}
+        onClose={closeEdit}
         title={editingSupplier ? 'Ubah Supplier' : 'Tambah Supplier'}
-        submitLabel={editingSupplier ? 'Simpan' : 'Tambahkan'}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
         size="md"
       >
-        <FormField label="Nama Supplier">
-          <Input
-            placeholder="Masukkan nama supplier"
-            value={form.name}
-            onChange={setField('name')}
-            autoFocus
-          />
-        </FormField>
-        <FormField label="Telepon">
-          <Input
-            placeholder="Masukkan nomor telepon"
-            value={form.phone}
-            onChange={setField('phone')}
-          />
-        </FormField>
-        <FormField label="Alamat">
-          <Input
-            placeholder="Masukkan alamat"
-            value={form.address}
-            onChange={setField('address')}
-          />
-        </FormField>
-        <FormField label="Kategori">
-          <Select
-            value={form.categoryId}
-            onChange={setField('categoryId')}
-          >
-            <option value="">Pilih kategori...</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </Select>
-        </FormField>
-      </FormModal>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Nama Supplier</label>
+              <Input
+                placeholder="Nama supplier"
+                value={formData.name}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+                }}
+                aria-label="Nama supplier"
+              />
+              {formErrors.name && <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>}
+            </div>
+            <div>
+              <label className="block text-left text-xs text-slate-600 mb-1">Telepon</label>
+              <Input
+                placeholder="Nomor telepon"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                aria-label="Telepon"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-left text-xs text-slate-600 mb-1">Alamat</label>
+            <Input
+              placeholder="Alamat"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              aria-label="Alamat"
+            />
+          </div>
+          <div>
+            <label className="block text-left text-xs text-slate-600 mb-1">Kategori</label>
+            <select
+              value={formData.categoryId}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Pilih kategori...</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>{c.nama}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
+            <Button
+              type="submit"
+              variant={editingSupplier ? 'outline' : 'primary'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Menyimpan...' : editingSupplier ? 'Simpan' : 'Tambahkan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Hapus Supplier"
-        message={`Yakin menghapus supplier "${deleteTarget?.name}"?`}
-        isLoading={isDeleting}
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        total={total}
+        perPage={perPage}
+        onPageChange={(p) => loadSuppliers(p, activeSearch)}
       />
-    </>
+    </div>
   );
 }
