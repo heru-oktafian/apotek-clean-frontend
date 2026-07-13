@@ -1,95 +1,190 @@
+/**
+ * @module categories/useCategories
+ * @description
+ * Hook untuk mengelola data kategori produk (product categories).
+ * Kategori produk digunakan untuk mengelompokkan produk obat-obatan berdasarkan
+ * jenisnya, misalnya: "Obat Keras", "Obat Bebas", "Vitamin", "Alat Kesehatan", dll.
+ *
+ * @see useProducts - hook terkait untuk data produk
+ * @see useAuth - dependency untuk auth token
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../auth/auth-context';
 import { fetchCategories } from '../api/categories-api';
-import type { CategoriesListParams } from '../types/categories';
 import type { Category } from '../types/categories';
 
-export type { Category } from '../types/categories';
+/**
+ * State yang disimpan di dalam hook ini.
+ * Dipisah jadi interface supaya namanya jelas dan gampang dibaca.
+ */
+interface UseCategoriesState {
+  /** Array kategori produk hasil fetch dari API */
+  categories: Category[];
+  /** Halaman aktif saat ini (1-based) */
+  page: number;
+  /** Jumlah item per halaman */
+  perPage: number;
+  /** Total semua kategori (untuk pagination) */
+  total: number;
+  /** True saat sedang memuat data dari API */
+  isLoading: boolean;
+  /** Pesan error kalau fetch gagal, null kalau tidak ada error */
+  apiError: string | null;
+}
 
+/**
+ * Hook untuk mengambil dan mengelola daftar kategori produk.
+ *
+ * **Auto-load:** Langsung memuat data halaman 1 begitu `activeToken` tersedia.
+ * Panggil `loadCategories()` ulang kalau butuh refresh atau load halaman lain.
+ *
+ * **Contoh penggunaan:**
+ * ```tsx
+ * function CategoryDropdown() {
+ *   const { categories, isLoading } = useCategories();
+ *
+ *   if (isLoading) return <Spinner />;
+ *
+ *   return (
+ *     <select>
+ *       {categories.map(cat => (
+ *         <option key={cat.id} value={cat.id}>{cat.nama}</option>
+ *       ))}
+ *     </select>
+ *   );
+ * }
+ * ```
+ *
+ * @returns Objek berisi state dan fungsi untuk mengelola kategori produk
+ */
 export function useCategories() {
   const { activeToken } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
-  const normalizeCategory = useCallback((item: any): Category => ({
-    id: item?.product_category_id ?? item?.productCategoryId ?? item?.id ?? item?.category_id ?? item?.categoryId ?? 0,
-    nama: item?.product_category_name ?? item?.productCategoryName ?? item?.name ?? item?.nama ?? '',
-  }), []);
+  const [state, setState] = useState<UseCategoriesState>({
+    categories: [],
+    page: 1,
+    perPage: 7,
+    total: 0,
+    isLoading: false,
+    apiError: null,
+  });
 
-  const loadCategories = useCallback(async (requestedPage = 1, search = '') => {
-    if (!activeToken) {
-      setCategories([]);
-      setTotal(0);
-      setPage(1);
-      setPerPage(10);
-      setApiError(null);
-      return;
-    }
+  /**
+   * Memuat daftar kategori produk dari API.
+   *
+   * Fungsi ini "defensive" — gagal parse tidak throw error,
+   * tapi set array kosong dan tampilkan error message lewat `apiError`.
+   *
+   * @param requestedPage - Nomor halaman yang diminta (default: 1)
+   * @param search - Kata kunci pencarian (default: '')
+   */
+  const loadCategories = useCallback(
+    async (requestedPage = 1, search = '') => {
+      // Kalau nggak ada token, reset state
+      if (!activeToken) {
+        setState((prev) => ({
+          ...prev,
+          categories: [],
+          total: 0,
+          page: 1,
+          perPage: 7,
+          apiError: null,
+        }));
+        return;
+      }
 
-    setIsLoading(true);
-    setApiError(null);
+      setState((prev) => ({ ...prev, isLoading: true, apiError: null }));
 
-    try {
-      const params: CategoriesListParams = {
-        page: requestedPage,
-        search: search.trim(),
-      };
+      try {
+        const response = await fetchCategories(activeToken, { page: requestedPage, search });
+        const payload = response as unknown as Record<string, unknown>;
 
-      const payload = await fetchCategories(activeToken, params);
-      const responseData = payload as Record<string, unknown>;
-      const dataValue = responseData.data as unknown;
-      const nestedDataValue = typeof dataValue === 'object' && dataValue !== null ? (dataValue as Record<string, unknown>).data : undefined;
-
-      const rawData = Array.isArray(dataValue)
-        ? dataValue
-        : Array.isArray(nestedDataValue)
-          ? nestedDataValue
-          : Array.isArray(responseData.items)
-            ? responseData.items
-            : Array.isArray(responseData.rows)
-              ? responseData.rows
-              : Array.isArray(payload)
-                ? payload
+        // Tangani berbagai format respons API — map field API ke type Category
+        const rawItems = Array.isArray(payload.data)
+          ? (payload.data as Record<string, unknown>[])
+          : Array.isArray((payload.data as Record<string, unknown>)?.data)
+            ? ((payload.data as Record<string, unknown>)?.data as Record<string, unknown>[])
+            : Array.isArray((payload.data as Record<string, unknown>)?.items)
+              ? ((payload.data as Record<string, unknown>)?.items as Record<string, unknown>[])
+              : Array.isArray((payload.data as Record<string, unknown>)?.rows)
+                ? ((payload.data as Record<string, unknown>)?.rows as Record<string, unknown>[])
                 : [];
 
-      const nextItems = rawData.map(normalizeCategory);
-      const totalItems = responseData.total_items as number | undefined
-        ?? (responseData.pagination as Record<string, unknown> | undefined)?.total as number | undefined
-        ?? responseData.total as number | undefined
-        ?? (responseData.meta as Record<string, unknown> | undefined)?.total as number | undefined
-        ?? (dataValue as Record<string, unknown> | undefined)?.total as number | undefined
-        ?? nextItems.length;
-      const currentPage = responseData.current_page as number | undefined
-        ?? (responseData.pagination as Record<string, unknown> | undefined)?.page as number | undefined
-        ?? responseData.page as number | undefined
-        ?? (responseData.meta as Record<string, unknown> | undefined)?.current_page as number | undefined
-        ?? requestedPage;
-      const nextPerPage = responseData.per_page as number | undefined
-        ?? (responseData.pagination as Record<string, unknown> | undefined)?.per_page as number | undefined
-        ?? (responseData.meta as Record<string, unknown> | undefined)?.per_page as number | undefined
-        ?? 10;
+        const rawData: Category[] = rawItems.map((item) => ({
+          id: (item.product_category_id ?? item.id ?? item.category_id ?? 0) as number,
+          nama: (item.product_category_name ?? item.nama ?? item.name ?? item.category_name ?? '') as string,
+        }));
 
-      setCategories(nextItems);
-      setTotal(Number(totalItems ?? nextItems.length));
-      setPage(Number(currentPage ?? requestedPage));
-      setPerPage(Number(nextPerPage ?? 10));
-    } catch (error) {
-      console.error(error);
-      setCategories([]);
-      setTotal(0);
-      setApiError(error instanceof Error ? error.message : 'Gagal memuat data kategori produk.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeToken, normalizeCategory]);
+        // Parse pagination metadata — backend beda-beda formatnya
+        const totalItems =
+          (payload.total_items as number) ??
+          ((payload.pagination as Record<string, number>)?.total) ??
+          (payload.total as number) ??
+          ((payload.meta as Record<string, number>)?.total) ??
+          ((payload.data as Record<string, number>)?.total as number) ??
+          rawData.length;
 
+        const currentPage =
+          (payload.current_page as number) ??
+          ((payload.pagination as Record<string, number>)?.page) ??
+          (payload.page as number) ??
+          ((payload.meta as Record<string, number>)?.current_page) ??
+          requestedPage;
+
+        const perPage =
+          (payload.per_page as number) ??
+          ((payload.pagination as Record<string, number>)?.per_page) ??
+          ((payload.meta as Record<string, number>)?.per_page) ??
+          7;
+
+        setState((prev) => ({
+          ...prev,
+          categories: rawData,
+          total: Number(totalItems ?? rawData.length),
+          page: Number(currentPage ?? requestedPage),
+          perPage: Number(perPage ?? 7),
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.error('[useCategories] Gagal memuat kategori:', error);
+        setState((prev) => ({
+          ...prev,
+          categories: [],
+          total: 0,
+          isLoading: false,
+          apiError: error instanceof Error ? error.message : 'Gagal memuat kategori produk.',
+        }));
+      }
+    },
+    [activeToken]
+  );
+
+  // Auto-load saat token berubah
   useEffect(() => {
-    void loadCategories(page, '');
-  }, [loadCategories, page]);
+    if (!activeToken) return;
+    void loadCategories(1, '');
+  }, [activeToken, loadCategories]);
 
-  return { categories, page, setPage, perPage, total, isLoading, apiError, loadCategories };
+  return {
+    /** Array kategori produk hasil fetch */
+    categories: state.categories,
+    /** Halaman aktif (1-based) */
+    page: state.page,
+    /** Fungsi untuk navigasi halaman */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setPage: (_page: number) => {
+      setState((prev) => ({ ...prev, page: _page }));
+      void loadCategories(_page, '');
+    },
+    /** Jumlah item per halaman */
+    perPage: state.perPage,
+    /** Total semua kategori produk */
+    total: state.total,
+    /** True saat sedang fetch data */
+    isLoading: state.isLoading,
+    /** Pesan error, null kalau aman */
+    apiError: state.apiError,
+    /** Fungsi utama untuk memuat data — panggil ulang untuk refresh */
+    loadCategories,
+  };
 }

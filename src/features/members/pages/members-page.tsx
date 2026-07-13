@@ -39,7 +39,7 @@ export function MembersPage() {
   });
   const activeSearch = searchInput.trim().toLowerCase();
 
-  const { members, total, page, perPage, isLoading, loadMembers } = useMembers(activeToken || '');
+  const { members, total, page, perPage, isLoading, loadMembers } = useMembers();
   const { categories } = useMemberCategories();
 
   // Modal state
@@ -205,13 +205,9 @@ export function MembersPage() {
     },
     { key: 'name', header: 'Nama Member' },
     { key: 'phone', header: 'Telepon' },
-    { key: 'email', header: 'Email' },
+    { key: 'address', header: 'Alamat' },
     { key: 'member_category', header: 'Kategori' },
-    {
-      key: 'joinDate',
-      header: 'Tanggal Gabung',
-      render: (row) => row.joinDate ? String(row.joinDate).split('T')[0] : '-',
-    },
+    { key: 'points', header: 'Poin', align: 'center', width: '80px' },
     {
       key: 'actions',
       header: 'Aksi',

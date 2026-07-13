@@ -1,16 +1,49 @@
+/**
+ * @module auth/pages/branch-selection-page
+ * @description
+ * Halaman pemilihan cabang aktif (fase 2 dari login flow).
+ * Tampil setelah user berhasil login tapi punya lebih dari 1 cabang.
+ *
+ * Flow:
+ * 1. Ambil daftar cabang dari API pakai `preBranchToken`
+ * 2. Tampilkan sebagai card list
+ * 3. User pilih salah satu → API setBranch → dapat `finalToken` → navigate ke dashboard
+ *
+ * Handle cases:
+ * - 0 branch → tampilkan empty state + tombol "Kembali ke login"
+ * - >1 branch → tampilkan branch list sebagai button cards
+ *
+ * @see LoginPage - halaman login (fase 1)
+ * @see useAuth - context untuk simpan token dan branch
+ */
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProfile, listBranches, normalizeBranch, setBranch } from '../api'
 import { useAuth } from '../auth-context'
 import type { BranchOption } from '../../../types/api'
 
+/**
+ * Komponen halaman pemilihan cabang aktif.
+ *
+ * Layout: 2-panel (sama kayak login page)
+ * - Kiri: Brand panel
+ * - Kanan: Branch list cards
+ *
+ * Fitur:
+ * - Loading skeleton saat fetch branches
+ * - Error handling
+ * - Tombol "Login dengan akun lain" → logout + redirect ke login
+ */
 export function BranchSelectionPage() {
+  // ── State ──────────────────────────────────────────────────────
   const navigate = useNavigate()
   const { preBranchToken, setActiveBranch, setActiveToken, setPreBranchToken, setProfile, logout } = useAuth()
   const [branches, setBranches] = useState<BranchOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmittingId, setIsSubmittingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // ── Effects ─────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!preBranchToken) { navigate('/login', { replace: true }); return }
@@ -31,8 +64,10 @@ export function BranchSelectionPage() {
     return () => { cancelled = true }
   }, [navigate, preBranchToken])
 
+  // ── Computed ────────────────────────────────────────────────────
   const hasBranches = useMemo(() => branches.length > 0, [branches])
 
+  // ── Branch Selection ────────────────────────────────────────────
   async function handleSelectBranch(branch: BranchOption) {
     if (!preBranchToken) { navigate('/login', { replace: true }); return }
     const branchId = branch.branch_id || branch.id

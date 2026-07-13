@@ -1,5 +1,29 @@
+/**
+ * @module shared/pages/profile-page
+ * @description
+ * Halaman profil user yang sedang login (profile page).
+ * Menampilkan informasi singkat user aktif dan branch yang sedang dipakai.
+ *
+ * Data yang ditampilkan:
+ * - Nama lengkap
+ * - Username
+ * - Role (Superadmin, Admin, Staff, Kasir)
+ * - Branch/cabang aktif
+ *
+ * Ini halaman sederhana — fokus ke display info, bukan edit.
+ * Kalau butuh edit profile, bikin separate page.
+ *
+ * @see useAuth - context untuk ambil profile dan active branch
+ */
 import { useAuth } from '../../auth/auth-context'
 
+/**
+ * Halaman profil user aktif.
+ *
+ * Layout: `page-card`
+ * - Header: judul "Profile" + deskripsi singkat
+ * - Body: grid info (nama, username, role, branch aktif)
+ */
 export function ProfilePage() {
   const { profile, activeBranch } = useAuth()
 

@@ -1,3 +1,22 @@
+/**
+ * @module users/pages/user-edit-page
+ * @description
+ * Halaman detail user — tampilkan info user dan daftar branch access yang dimilikinya.
+ * Dari halaman ini user bisa:
+ * - Lihat data user (username, nama, role, status)
+ * - Lihat branch access yang dimiliki user
+ * - Hapus branch access (dari tabel)
+ * - Navigasi ke form edit user
+ *
+ * Routing:
+ * - URL: `/system/users/:userId`
+ * - Tombol "Update" → `/system/users/:userId/edit`
+ * - Tombol "Kembali" → `/system/users`
+ *
+ * @see UsersPage - halaman daftar user
+ * @see UserEditFormPage - halaman form edit user
+ * @see useAuth - context untuk auth token
+ */
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
@@ -6,18 +25,28 @@ import { useToast, Table, Button, type TableColumn } from '../../../components/u
 import { fetchUserBranchAccess, fetchUserById, removeUserBranchAccess } from '../api/users-api'
 import type { User, UserBranchAccess } from '../types/users'
 
+/**
+ * Halaman detail user.
+ *
+ * Layout: `page-card` (section dengan header + body)
+ * - Header: info user (username, nama, role, status) + avatar placeholder
+ * - Body: tabel branch access + tombol hapus per baris
+ */
 export function UserEditPage() {
+  // ── Route Params ───────────────────────────────────────────────
   const { userId } = useParams()
   const navigate = useNavigate()
   const { activeToken } = useAuth()
   const toast = useToast()
 
+  // ── State ──────────────────────────────────────────────────────
   const [user, setUser] = useState<User | null>(null)
   const [branchAccess, setBranchAccess] = useState<UserBranchAccess[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // ── Data Loading ────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!activeToken || !userId) return
 
@@ -60,6 +89,7 @@ export function UserEditPage() {
     }
   }
 
+  // ── Table Columns ───────────────────────────────────────────────
   const columns: TableColumn<UserBranchAccess>[] = [
     { key: 'branch_id', header: 'Branch ID' },
     { key: 'branch_name', header: 'Nama Branch' },

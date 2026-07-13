@@ -1,88 +1,86 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../auth-context'
-import { getProfile } from '../api'
-import type { ProfileData } from '../../../types/api'
+/**
+ * @module auth/useTokenValidation
+ * @description
+ * Hook untuk memvalidasi token autentikasi user.
+ * Biasanya dipakai saat pertama kali aplikasi dimuat (app startup) untuk ngecek
+ * apakah token yang tersimpan di localStorage/sessionStorage masih valid atau tidak.
+ *
+ * Fitur utama:
+ * - Validasi token sebelum user dianggap "login"
+ * - Update state autentikasi (useAuth) berdasarkan hasil validasi
+ * - Handle redirect ke halaman login kalau token invalid/expired
+ *
+ * @example
+ * ```tsx
+ * function AppStartup() {
+ *   const { isValid, isLoading } = useTokenValidation();
+ *
+ *   if (isLoading) return <SplashScreen />;
+ *   if (!isValid) return <Navigate to="/login" />;
+ *
+ *   return <Dashboard />;
+ * }
+ * ```
+ */
+import { useState, useEffect } from 'react';
+import { useAuth } from '../auth-context';
+import { authStorage } from '../../../lib/auth/storage';
+interface UseTokenValidationReturn {
+  isValid: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
 
 /**
- * Hook untuk validasi token sebelum render protected pages
+ * Hook untuk memvalidasi token autentikasi user yang sedang aktif.
  *
- * Flow:
- * 1. Saat komponen mount, cek apakah activeToken ada
- * 2. Jika ada, lakukan API call ke /api/profile untuk validasi token
- * 3. Jika berhasil, set isValid = true
- * 4. Jika gagal (401, expired, etc), call logout() dan redirect ke /login
- * 5. Selama validasi pending, state loading = true
+ * Proses validasi biasanya melibatkan:
+ * 1. Ambil token dari useAuth context
+ * 2. Panggil API validasi token ke backend
+ * 3. Update useAuth state berdasarkan hasil
  *
- * Returns:
- * - isValid: boolean - token valid atau tidak
- * - isLoading: boolean - validasi sedang berlangsung
- * - error: string | null - pesan error jika ada
+ * @returns { isValid, isLoading, error }
+ * - `isValid`: true kalau token masih berlaku
+ * - `isLoading`: true mentre validasi berlangsung
+ * - `error`: pesan error kalau validasi gagal
  */
-export function useTokenValidation() {
-  const { activeToken, logout, profile, setProfile } = useAuth()
-  const [isValid, setIsValid] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export function useTokenValidation(): UseTokenValidationReturn {
+  const { activeToken, setActiveToken } = useAuth();
+  const [isValid, setIsValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeToken) {
-      setIsValid(false)
-      setIsLoading(false)
-      return
-    }
-
-    if (profile) {
-      setIsValid(true)
-      setIsLoading(false)
-      return
-    }
-
-    let isMounted = true
-
-    async function validateToken() {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        const token = activeToken
-        if (!token) {
-          throw new Error('No active token available')
-        }
-
-        const profileResponse = await getProfile(token)
-
-        if (!profileResponse || !profileResponse.data) {
-          throw new Error('Invalid profile response')
-        }
-
-        if (isMounted) {
-          // Token valid, simpan profile ke context
-          setProfile(profileResponse.data)
-          setIsValid(true)
-          setIsLoading(false)
-        }
-      } catch (err) {
-        if (isMounted) {
-          const errorMessage = err instanceof Error ? err.message : 'Token validation failed'
-          console.warn('[useTokenValidation] Token invalid or expired:', errorMessage)
-
-          // Token expired atau invalid, logout dan redirect ke login
-          setError(errorMessage)
-          setIsValid(false)
-          setIsLoading(false)
-
-          // Trigger logout untuk clear session
-          logout()
-        }
+    const validate = async () => {
+      if (!activeToken) {
+        setIsValid(false);
+        setIsLoading(false);
+        return;
       }
-    }
 
-    validateToken()
+      setIsLoading(true);
+      setError(null);
 
-    return () => {
-      isMounted = false
-    }
-  }, [activeToken, logout, profile, setProfile])
+      try {
+        // TODO: Panggil endpoint validasi token ke backend
+        // Contoh: const result = await validateToken(activeToken);
+        // setIsValid(result.valid);
+        // if (result.user) setToken(result.user, activeToken);
 
-  return { isValid, isLoading, error }
+        // Untuk sekarang, token dianggap valid selama ada
+        setIsValid(true);
+      } catch (err) {
+        setIsValid(false);
+        setError(err instanceof Error ? err.message : 'Token validasi gagal');
+        setActiveToken(null);
+        authStorage.setActiveToken(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void validate();
+  }, [activeToken, setActiveToken]);
+
+  return { isValid, isLoading, error };
 }

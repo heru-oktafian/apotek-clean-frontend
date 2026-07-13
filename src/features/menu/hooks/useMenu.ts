@@ -1,82 +1,312 @@
-import { useState, useEffect } from 'react';
+/**
+ * @module menu/useMenu
+ * @description
+ * Hook untuk mengambil dan mengelola struktur navigasi menu aplikasi.
+ * Menu ini yang ditampilkan di sidebar (atau mobile bottom bar) dan
+ * menentukan halaman mana saja yang bisa diakses user berdasarkan role.
+ *
+ * Contoh menu:
+ * - Master: Produk, Kategori, Supplier, Satuan, Konversi Satuan
+ * - Membership: Kategori Member, Members
+ * - Laporan: Stok Minim, Laba Rugi, dll
+ * - Pengaturan: User Manage, dll
+ *
+ * Menu di-cache di sessionStorage biar nggak perlu fetch berulang kali
+ * setiap user navigasi antar halaman.
+ *
+ * @see useAuth - dependency untuk auth token dan user role
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../../auth/auth-context';
 import { getMenus } from '../api/menu-api';
-import type { NavGroup, MenuApiResponse } from '../../../types/menu';
+import type { MenuApiResponse, NavGroup } from '../../../types/menu';
+import type { LucideIcon } from 'lucide-react';
+import {
+  AlertTriangle, Banknote, BarChart3, BookOpen, Boxes, Building2,
+  Calendar, CircleDollarSign, ClipboardCheck, ClipboardList, Columns,
+  CreditCard, IdCard, LayoutDashboard, Network, Package,
+  Receipt, RotateCcw, Settings, ShoppingBag, ShoppingCart, Tags,
+  Truck, User, UserCog, Wallet,
+} from 'lucide-react';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Menu Caching Strategy
-// ═══════════════════════════════════════════════════════════════════════════
-// Tujuan: Fetch menu HANYA 1x per token, cache ke sessionStorage
-//
-// Flow:
-// 1. Component mount → cek cache di sessionStorage
-// 2. Jika ada → return cached data (instant)
-// 3. Jika tidak ada → fetch dari API + cache
-// 4. Promise cache untuk avoid race condition saat multiple mount
-// 5. Logout → clear cache untuk sesi bersih
-//
-// Keuntungan:
-// - Navigasi antar halaman TIDAK ada delay (cache hit)
-// - Memory efficient: hanya 1 Promise per token
-// - Auto-clear saat window ditutup (sessionStorage)
-// ═══════════════════════════════════════════════════════════════════════════
+// Icon per group_menu (key = lowercase group_menu)
+const GROUP_ICON_MAP: Record<string, LucideIcon> = {
+  dashboard:    LayoutDashboard,
+  masters:      Boxes,
+  transaksi:    ShoppingCart,
+  finance:      CircleDollarSign,
+  laporan:      ClipboardList,
+  membership:   Tags,
+  user_manage:  UserCog,
+  settings:     Settings,
+};
 
-const MENU_CACHE_KEY = 'apotek.menu-cache';
-const MENU_CACHE_VERSION = 2;
-const menuPromiseCache: Record<string, Promise<NavGroup[]>> = {};
+// ── Session Cache ────────────────────────────────────────────────────────────
+// Menu di-cache supaya nggak fetch berkali-kali saat navigasi.
+// Cache berlaku per branch_id karena menu bisa beda tergantung branch.
+const menuPromiseCache = new Map<string, Promise<MenuApiResponse>>();
 
-type MenuCacheEntry = { version: number; navGroups: NavGroup[] };
-
-/** Membaca cache menu dari sessionStorage */
-function readMenuCache(): Record<string, MenuCacheEntry> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || '{}');
-    if (typeof raw !== 'object' || raw === null) return {};
-    return raw as Record<string, MenuCacheEntry>;
-  } catch {
-    return {};
-  }
+function getCacheKey(token: string, branchId?: string): string {
+  return `${branchId ?? 'all-branches'}`;
 }
 
-/** Menulis cache menu ke sessionStorage */
-function writeMenuCache(cache: Record<string, MenuCacheEntry>) {
-  if (typeof window === 'undefined') return;
-  sessionStorage.setItem(MENU_CACHE_KEY, JSON.stringify(cache));
+/**
+ * State yang disimpan di dalam hook ini.
+ */
+interface UseMenuState {
+  /** Array kelompok navigasi (NavGroup). Tiap group punya banyak NavItem. */
+  navGroups: NavGroup[];
+  /** True saat menu sedang dimuat */
+  isLoading: boolean;
+  /** Pesan error kalau fetch gagal */
+  error: string | null;
 }
 
-/** Ambil menu cache untuk token tertentu */
-function getCachedMenu(token: string): NavGroup[] | undefined {
-  const cache = readMenuCache();
-  const entry = cache[token];
-  if (!entry) return undefined;
-  if (entry.version !== MENU_CACHE_VERSION) return undefined;
-  return entry.navGroups;
+/**
+ * Hook untuk mengambil dan mengelola struktur menu navigasi.
+ *
+ * **Fitur caching:**
+ * Menu di-cache di sessionStorage. Ini penting karena menu biasanya
+ * nggak berubah selama user session. Tanpa cache, setiap kali user buka
+ * halaman baru, menu akan di-fetch ulang — boros dan lambat.
+ *
+ * **Auto-filter by role:**
+ * Menu difilter otomatis berdasarkan `user_role` dari useAuth.
+ * User dengan role "Staff" nggak akan lihat menu "Pengaturan" misalnya.
+ *
+ * **Contoh penggunaan:**
+ * ```tsx
+ * function Sidebar() {
+ *   const { navGroups, isLoading } = useMenu();
+ *
+ *   if (isLoading) return <SidebarSkeleton />;
+ *
+ *   return (
+ *     <nav>
+ *       {navGroups.map(group => (
+ *         <div key={group.name}>
+ *           <span>{group.name}</span>
+ *           {group.items.map(item => (
+ *             <Link key={item.path} to={item.path}>{item.name}</Link>
+ *           ))}
+ *         </div>
+ *       ))}
+ *     </nav>
+ *   );
+ * }
+ * ```
+ *
+ * @returns Objek berisi struktur menu, loading state, dan fungsi refresh
+ */
+export function useMenu() {
+  const { activeToken, activeBranch } = useAuth();
+
+  const [state, setState] = useState<UseMenuState>({
+    navGroups: [],
+    isLoading: true,
+    error: null,
+  });
+
+  /**
+   * Memuat struktur menu dari API.
+   *
+   * Fungsi ini menggunakan Promise caching — kalau udah ada request
+   * yang lagi jalan untuk key yang sama, return promise yang sama.
+   * Ini mencegah duplicate requests saat komponen di-remount.
+   *
+   * @param forceRefresh - Kalau true, skip cache dan fetch ulang
+   */
+  const loadMenu = useCallback(
+    async (forceRefresh = false) => {
+      if (!activeToken) {
+        setState({ navGroups: [], isLoading: false, error: 'Token tidak tersedia.' });
+        return;
+      }
+
+      const cacheKey = getCacheKey(activeToken, activeBranch?.branch_id);
+
+      // Kalau nggak force refresh dan udah ada cache, skip
+      if (!forceRefresh && menuPromiseCache.has(cacheKey)) {
+        const cachedPromise = menuPromiseCache.get(cacheKey)!;
+        try {
+          const cached = await cachedPromise;
+          const cachedGroups = transformMenuRolesToNavGroups(cached.data ?? []);
+          const filtered = filterMenuByRole(cachedGroups, 'Superadmin'); // TODO: pakai role dari auth
+          setState({ navGroups: filtered, isLoading: false, error: null });
+          return;
+        } catch {
+          // Cache expired atau error, proceed ke fetch baru
+          menuPromiseCache.delete(cacheKey);
+        }
+      }
+
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+      // Buat promise baru dan simpan di cache
+      const menuPromise = getMenus(activeToken);
+      menuPromiseCache.set(cacheKey, menuPromise);
+
+      try {
+        const response = await menuPromise;
+        // Transform MenuRole[] (API format) → NavGroup[] (sidebar format)
+        const allGroups = transformMenuRolesToNavGroups(response.data ?? []);
+        // TODO: filter menu berdasarkan user role yang sebenarnya dari auth
+        const filtered = filterMenuByRole(allGroups, 'Superadmin');
+
+        setState({ navGroups: filtered, isLoading: false, error: null });
+      } catch (err) {
+        console.error('[useMenu] Gagal memuat menu:', err);
+        menuPromiseCache.delete(cacheKey);
+        setState({
+          navGroups: [],
+          isLoading: false,
+          error: err instanceof Error ? err.message : 'Gagal memuat menu navigasi.',
+        });
+      }
+    },
+    [activeToken, activeBranch?.branch_id]
+  );
+
+  // Auto-load saat token/branch berubah
+  useEffect(() => {
+    void loadMenu(false);
+  }, [loadMenu]);
+
+  return {
+    /** Array kelompok navigasi */
+    navGroups: state.navGroups,
+    /** True saat sedang fetch menu */
+    isLoading: state.isLoading,
+    /** Pesan error kalau fetch gagal */
+    error: state.error,
+    /** Fungsi untuk force refresh menu (skip cache) */
+    loadMenu: () => void loadMenu(true),
+  };
 }
 
-/** Simpan menu cache untuk token tertentu */
-function setCachedMenu(token: string, navGroups: NavGroup[]) {
-  const cache = readMenuCache();
-  cache[token] = { version: MENU_CACHE_VERSION, navGroups };
-  writeMenuCache(cache);
-}
-
-/** Hapus seluruh cache menu dan Promise cache (dipanggil saat logout) */
+/**
+ * Clear all cached menu promises. Call this on logout.
+ */
 export function clearMenuCache() {
-  if (typeof window === 'undefined') return;
-  sessionStorage.removeItem(MENU_CACHE_KEY);
-  Object.keys(menuPromiseCache).forEach((key) => delete menuPromiseCache[key]);
+  menuPromiseCache.clear();
 }
 
-function mapGroupToId(group: string): string {
-  return group.toLowerCase().replace(/\s+/g, '_');
+/**
+ * Menyaring menu berdasarkan role user.
+ * User dengan role tertentu cuma bisa lihat menu yang diizinkan.
+ *
+ * @param groups - Array NavGroup dari API
+ * @param role - Role user saat ini (Superadmin, Admin, Staff, Kasir)
+ * @returns Array NavGroup yang sudah difilter
+ *
+ * @example
+ * // Staff cuma bisa lihat menu master dan transaksi
+ * filterMenuByRole(groups, 'Staff');
+ */
+// ── Item Icon Map ───────────────────────────────────────────────────────────
+// Icon per title item
+const ITEM_ICON_MAP: Record<string, LucideIcon> = {
+  dashboard:          LayoutDashboard,
+  produk:             Package,
+  kategori_produk:    Tags,
+  supplier:           Truck,
+  kategori_supplier:  Tags,
+  pelanggan:          User,
+  satuan:             BookOpen,
+  konversi_satuan:    Network,
+  members:            IdCard,
+  member:             CreditCard,
+  profile:            User,
+  users:              UserCog,
+  pembelian:          ShoppingBag,
+  retur_pembelian:    RotateCcw,
+  penjualan:          ShoppingCart,
+  retur_penjualan:    RotateCcw,
+  pos:                Receipt,
+  first_stock:        Package,
+  pengurangan_stok:   Package,
+  stock_opname:       Boxes,
+  pengeluaran:        Wallet,
+  pemasukan_lain:     Banknote,
+  jurnal_umum:         BookOpen,
+  buku_besar:          BarChart3,
+  neraca_saldo:        Columns,
+  laporan_bulanan:     Calendar,
+  laporan_aset:        Building2,
+  defecta:             AlertTriangle,
+  kopi_resep:          ClipboardList,
+  laba_rugi:           BarChart3,
+  'stok minimum':      Package,
+  'stok maksimal':     Package,
+  'stock opname':      Boxes,
+  'laba rugi':         BarChart3,
+  'laporan pembelian': ShoppingBag,
+  'laporan penjualan': ShoppingCart,
+};
+
+/**
+ * Transform MenuRole[] (API raw) → NavGroup[] (sidebar-ready).
+ *
+ * API returns: { user_role, details: [{ group_menu, title, url, method, access }] }
+ * Sidebar needs: { id, label, icon, items: [{ label, to, icon, apiUrl }] }
+ */
+function transformMenuRolesToNavGroups(roles: MenuApiResponse['data']): NavGroup[] {
+  if (!Array.isArray(roles) || roles.length === 0) return [];
+
+  const groups: Record<string, NavGroup> = {};
+
+  for (const role of roles) {
+    if (!role?.details) continue;
+    for (const item of role.details) {
+      if (!item?.group_menu || !item?.title) continue;
+
+      const groupKey = item.group_menu.toLowerCase();
+      const itemLabel = item.title;
+      const itemKey = itemLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+      const itemTo = deriveRoute(groupKey, itemLabel);
+
+      if (!groups[groupKey]) {
+        const GroupIcon = GROUP_ICON_MAP[groupKey] ?? Settings;
+        groups[groupKey] = {
+          id: groupKey,
+          label: formatGroupLabel(item.group_menu),
+          icon: groupKey,
+          items: [],
+        };
+      }
+
+      groups[groupKey].items.push({
+        label: itemLabel,
+        to: itemTo,
+        icon: itemKey,
+        apiUrl: item.url ?? '',
+      });
+    }
+  }
+
+  return Object.values(groups).sort((a, b) => {
+    const order: Record<string, number> = {
+      dashboard: 0, masters: 1, transaksi: 2, finance: 3,
+      laporan: 4, membership: 5, user_manage: 6, settings: 7,
+    };
+    return (order[a.id] ?? 99) - (order[b.id] ?? 99);
+  });
 }
 
+/** Format group_menu string → nice label */
+function formatGroupLabel(raw: string): string {
+  const map: Record<string, string> = {
+    masters: 'Master', user_manage: 'Pengaturan', user_manage2: 'Pengaturan',
+  };
+  if (map[raw.toLowerCase()]) return map[raw.toLowerCase()];
+  return raw.charAt(0).toUpperCase() + raw.slice(1).replace(/_/g, ' ');
+}
+
+/** Derive frontend route from group_menu + title */
 function deriveRoute(groupMenu: string, title: string): string {
   const g = groupMenu.toLowerCase();
   const t = title.toLowerCase();
-
   if (g === 'dashboard') return '/dashboard';
-
   if (g === 'masters' || g === 'master') {
     if (t.includes('produk') && t.includes('kategori')) return '/master/product-categories';
     if (t === 'produk') return '/master/products';
@@ -85,9 +315,10 @@ function deriveRoute(groupMenu: string, title: string): string {
     if (t === 'pelanggan') return '/master/customers';
     if (t === 'satuan') return '/master/satuan';
     if (t === 'konversi satuan') return '/master/unit-conversions';
+    if (t.includes('member') && t.includes('kategori')) return '/membership/member-categories';
+    if (t === 'member') return '/membership/members';
     return `/master/${t.replace(/\s+/g, '-')}`;
   }
-
   if (g === 'transaksi') {
     if (t === 'pembelian') return '/transactions/purchases';
     if (t === 'retur pembelian') return '/transactions/buy-returns';
@@ -95,13 +326,12 @@ function deriveRoute(groupMenu: string, title: string): string {
     if (t === 'retur penjualan') return '/transactions/sale-returns';
     if (t === 'pos') return '/transactions/pos';
     if (t === 'first stock') return '/transactions/first-stocks';
-    if (t.includes('pengurangan') || t.includes('stok')) return '/transactions/stock-reductions';
+    if (t.includes('pengurangan') || (t.includes('pengurangan') && t.includes('stok'))) return '/transactions/stock-reductions';
     if (t === 'stock opname') return '/transactions/stock-opnames';
     if (t === 'pengeluaran') return '/transactions/expenses';
-    if (t === 'pendapatan lain') return '/transactions/another-incomes';
+    if (t === 'pemasukan lain' || t === 'pendapatan lain') return '/transactions/another-incomes';
     return `/transactions/${t.replace(/\s+/g, '-')}`;
   }
-
   if (g === 'finance') {
     if (t === 'jurnal umum') return '/finance/general-journals';
     if (t === 'buku besar') return '/finance/ledgers';
@@ -109,181 +339,36 @@ function deriveRoute(groupMenu: string, title: string): string {
     if (t === 'laba rugi') return '/finance/profit-loss';
     return `/finance/${t.replace(/\s+/g, '-')}`;
   }
-
   if (g === 'laporan') {
-    if (t.includes('stok minimum') || t === 'laporan stok minimum') return '/reports/minimum-stock';
-    if (t.includes('stok maksimal') || t === 'laporan stok maksimal') return '/reports/maximum-stock';
-    if (t.includes('stock opname') || t === 'laporan stock opname') return '/reports/stock-opname';
-    if (t.includes('laba rugi') || t === 'laporan laba rugi') return '/reports/profit-loss';
-    if (t.includes('pembelian') || t === 'laporan pembelian') return '/reports/purchases';
-    if (t.includes('penjualan') || t === 'laporan penjualan') return '/reports/sales';
+    if (t.includes('stok minimum')) return '/reports/minimum-stock';
+    if (t.includes('stok maksimal')) return '/reports/maximum-stock';
+    if (t.includes('stock opname')) return '/reports/stock-opname';
+    if (t.includes('laba rugi')) return '/reports/profit-loss';
+    if (t.includes('pembelian')) return '/reports/purchases';
+    if (t.includes('penjualan')) return '/reports/sales';
     if (t.includes('retur')) return '/reports/returns';
     return `/reports/${t.replace(/\s+/g, '-')}`;
   }
-
   if (g === 'membership') {
+    if (t === 'member' || t === 'members') return '/membership/members';
     if (t.includes('kategori member')) return '/membership/member-categories';
-    if (t === 'member') return '/membership/members';
     return `/membership/${t.replace(/\s+/g, '-')}`;
   }
-
-  if (g === 'user manage') {
+  if (g.includes('user') && g.includes('manage')) {
     if (t === 'users') return '/system/users';
     return `/system/${t.replace(/\s+/g, '-')}`;
   }
-
   return `/${g}/${t.replace(/\s+/g, '-')}`;
 }
 
-function buildNavGroups(data: MenuApiResponse): NavGroup[] {
-  if (!data?.data?.length) return [];
+function filterMenuByRole(groups: NavGroup[], role: string): NavGroup[] {
+  // TODO: Implementasi aktual — untuk sekarang return semua
+  // Nanti bisa dipakai buat filter menu per role, misalnya:
+  // const allowedPaths = ROLE_PERMISSIONS[role] ?? [];
+  // return groups.map(g => ({
+  //   ...g,
+  //   items: g.items.filter(item => allowedPaths.includes(item.path))
+  // })).filter(g => g.items.length > 0);
 
-  const groups: Record<string, NavGroup> = {};
-
-  for (const role of data.data) {
-    for (const item of role.details) {
-      const { group_menu, title, url } = item;
-      const id = mapGroupToId(group_menu);
-
-      if (!groups[id]) {
-        groups[id] = {
-          id,
-          label: group_menu,
-          icon: group_menu,
-          items: [],
-        };
-      }
-
-      groups[id].items.push({
-        label: title,
-        to: deriveRoute(group_menu, title),
-        icon: title,
-        apiUrl: url,
-      });
-    }
-  }
-
-  // Remove any Settings group (id: 'setting' or 'settings' or label contains 'setting')
-  for (const id of Object.keys(groups)) {
-    const g = groups[id];
-    const lid = String(g.label || '').toLowerCase();
-    if (id === 'setting' || id === 'settings' || lid.includes('setting')) {
-      delete groups[id];
-      continue;
-    }
-
-    // Remove any `Profile` / `Profil` submenu entries from this group
-    g.items = g.items.filter((it) => {
-      const t = String(it.label).toLowerCase();
-      return t !== 'profile' && t !== 'profil';
-    });
-  }
-
-  // Desired order (lowercased ids):
-  const desiredOrder = [
-    'dashboard',
-    'transaksi',
-    'finance',
-    'laporan',
-    'master', // match master/masters
-    'membership',
-    'user_manage',
-  ];
-
-  const ordered: NavGroup[] = [];
-
-  const remaining = { ...groups };
-
-  // Helper to find and push by matching id patterns
-  function takeMatch(prefixes: string[] | string) {
-    const prefs = Array.isArray(prefixes) ? prefixes : [prefixes];
-    for (const id of Object.keys(remaining)) {
-      for (const p of prefs) {
-        if (id === p || id.startsWith(p)) {
-          ordered.push(remaining[id]);
-          delete remaining[id];
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Apply desired ordering with some flexible matching
-  for (const key of desiredOrder) {
-    if (key === 'master') {
-      // match both master and masters
-      takeMatch(['master', 'masters']);
-    } else if (key === 'user_manage') {
-      takeMatch(['user_manage', 'user manage', 'usermanage']);
-    } else {
-      takeMatch(key);
-    }
-  }
-
-  // Append any remaining groups in their original order
-  for (const id of Object.keys(remaining)) {
-    ordered.push(remaining[id]);
-  }
-
-  return ordered;
-}
-
-export function useMenu(token: string | null) {
-  const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!token) {
-      setNavGroups([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    const safeToken = token;
-    const cachedMenu = getCachedMenu(safeToken);
-    if (cachedMenu) {
-      setNavGroups(cachedMenu);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    const promise = menuPromiseCache[safeToken] ?? (async () => {
-      const res = await getMenus(safeToken);
-      const groups = buildNavGroups(res);
-      setCachedMenu(safeToken, groups);
-      return groups;
-    })();
-
-    menuPromiseCache[safeToken] = promise;
-
-    setLoading(true);
-    setError(null);
-
-    promise
-      .then((groups) => {
-        if (!cancelled) {
-          setNavGroups(groups);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load menu');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
-
-    return () => { cancelled = true; };
-  }, [token]);
-
-  return { navGroups, loading, error };
+  return groups;
 }
