@@ -1,9 +1,45 @@
+/**
+ * @module auth/pages/login-page
+ * @description
+ * Halaman login utama aplikasi Apotek Ziida.
+ * Alur login menggunakan sistem **2 fase (branch-aware auth)**:
+ *
+ * Fase 1 — Login: User input username & password → dapat `preBranchToken`
+ * Fase 2 — Branch Selection: Kalau user punya >1 cabang, minta pilih cabang aktif
+ *
+ * Handle cases:
+ * - 0 branch → lempar error "Tidak ada cabang"
+ * - 1 branch → auto-select, langsung ke dashboard
+ * - >1 branch → redirect ke `/select-branch`
+ *
+ * @example
+ * // Route di App.tsx:
+ * <Route path="/login" element={<LoginPage />} />
+ * <Route path="/select-branch" element={<BranchSelectionPage />} />
+ *
+ * @see BranchSelectionPage - halaman pemilihan cabang (fase 2)
+ * @see useAuth - context untuk simpan token dan profile
+ */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProfile, listBranches, login, normalizeBranch, setBranch } from '../api'
 import { useAuth } from '../auth-context'
 
+/**
+ * Komponen halaman login.
+ *
+ * Tampilan: 2-panel (split layout)
+ * - Kiri: Brand panel (kiri) dengan info aplikasi
+ * - Kanan: Form login (username + password)
+ *
+ * Fitur:
+ * - Toggle show/hide password
+ * - Error handling dengan pesan dari API
+ * - Loading state saat submit
+ * - Auto-redirect kalau branch cuma 1
+ */
 export function LoginPage() {
+  // ── State ──────────────────────────────────────────────────────
   const navigate = useNavigate()
   const { setActiveBranch, setActiveToken, setPreBranchToken, setProfile } = useAuth()
   const [username, setUsername] = useState('')
@@ -12,6 +48,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
+  // ── Form Handler ────────────────────────────────────────────────
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)

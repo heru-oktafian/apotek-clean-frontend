@@ -39,7 +39,7 @@ export function MobileBottomBar() {
   const location = useLocation();
   const [showMore, setShowMore] = useState(false);
   const [fallbackGroups, setFallbackGroups] = useState<NavGroup[]>([]);
-  const { navGroups: allGroups } = useMenu(activeToken);
+  const { navGroups: allGroups } = useMenu();
   const menuGroups = allGroups.length > 0 ? allGroups : fallbackGroups;
 
   // DOM fallback: if menu API fails or returns empty, try to read sidebar DOM
@@ -119,17 +119,18 @@ export function MobileBottomBar() {
             </div>
             <div className="mobile-bottom-bar__drawer-body">
               {(() => {
-                const dash = menuGroups.find(g => g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard');
-                const others = menuGroups.filter(g => !(g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard'));
+                const dash = menuGroups.find(g => (g.id ?? g.label ?? '').toLowerCase() === 'dashboard');
+                const others = menuGroups.filter(g => !((g.id ?? g.label ?? '').toLowerCase() === 'dashboard'));
                 return (
                   <>
                     {dash && (
                       <div className="mobile-bottom-bar__dashboard-single" key="dashboard-single">
-                        {dash.items.map((item, idx) => {
-                          const key = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+                        {(dash.items ?? []).map((item, idx) => {
+                          const key = String(item.label ?? '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                           const Icon = (ITEM_ICON_MAP as any)[key] ?? Settings;
+                          const itemTo = item.to ?? '';
                           return (
-                            <Link key={`dash-${idx}`} to={item.to} className={`mobile-bottom-bar__item${isActive(item.to) ? ' active' : ''}`} onClick={() => setShowMore(false)}>
+                            <Link key={`dash-${idx}`} to={itemTo} className={`mobile-bottom-bar__item${isActive(itemTo) ? ' active' : ''}`} onClick={() => setShowMore(false)}>
                               <Icon size={16} className="mobile-bottom-bar__item-icon" />
                               <span>{item.label}</span>
                             </Link>
@@ -137,23 +138,24 @@ export function MobileBottomBar() {
                         })}
                       </div>
                     )}
-                    {others.map((group) => {
+                    {others.map((group, gi) => {
                       const gKey = (group.id || group.label || '').toLowerCase().replace(/\s+/g, '_');
                       const GroupIcon = (GROUP_ICON_MAP as any)[gKey] ?? Settings;
                       return (
-                        <div key={group.id} className="mobile-bottom-bar__group">
+                        <div key={group.id ?? group.label ?? `group-${gi}`} className="mobile-bottom-bar__group">
                           <div className="mobile-bottom-bar__group-header">
                             <GroupIcon size={16} className="mobile-bottom-bar__group-icon" />
-                            <p className="mobile-bottom-bar__group-label">{group.label}</p>
+                            <p className="mobile-bottom-bar__group-label">{group.label ?? 'Menu'}</p>
                           </div>
-                          {group.items.map((item, idx) => {
-                            const key = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+                          {(group.items ?? []).map((item, idx) => {
+                            const key = String(item.label ?? '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                             const Icon = (ITEM_ICON_MAP as any)[key] ?? Settings;
+                            const itemTo = item.to ?? '';
                             return (
                               <Link
-                                key={`${item.to}-${idx}`}
-                                to={item.to}
-                                className={`mobile-bottom-bar__item${isActive(item.to) ? ' active' : ''}`}
+                                key={`${itemTo}-${idx}`}
+                                to={itemTo}
+                                className={`mobile-bottom-bar__item${isActive(itemTo) ? ' active' : ''}`}
                                 onClick={() => setShowMore(false)}
                               >
                                 <Icon size={16} className="mobile-bottom-bar__item-icon" />

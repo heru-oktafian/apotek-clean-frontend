@@ -197,17 +197,17 @@ function deriveRoute(groupMenu: string, title: string): string {
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
   const { activeToken } = useAuth();
   const location = useLocation();
-  const { navGroups: allGroups, loading: menuLoading, error: menuError } = useMenu(activeToken);
+  const { navGroups: allGroups, isLoading: menuLoading, error: menuError } = useMenu();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Auto-expand group yang aktif saat allGroups loaded
   useEffect(() => {
     if (!allGroups.length) return;
     const activeGroup = allGroups.find((g) =>
-      g.items.some((item) => location.pathname.startsWith(item.to))
+      (g.items ?? []).some((item) => location.pathname.startsWith(item.to ?? ''))
     );
     if (activeGroup) {
-      setExpandedGroups(new Set([activeGroup.id]));
+      setExpandedGroups(new Set([activeGroup.id ?? '']));
     }
   }, [allGroups, location.pathname]);
 
@@ -256,53 +256,55 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
           {!menuLoading && !menuError && (
             <>
               {/* Render Dashboard as standalone (no group) if present */}
-              {allGroups.filter(g => g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard').map((dg) => (
-                dg.items.map((item) => {
-                  const itemKey = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+              {allGroups.filter(g => g.id?.toLowerCase() === 'dashboard' || g.label?.toLowerCase() === 'dashboard').map((dg) => (
+                (dg.items ?? []).map((item) => {
+                  const itemKey = String(item.label ?? '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                   const ItemIcon = ITEM_ICON_MAP[itemKey] ?? Settings;
-                  const isActive = location.pathname.startsWith(item.to);
+                  const itemTo = item.to ?? '';
+                  const isActive = location.pathname.startsWith(itemTo);
                   return (
                     <Link
-                      key={item.to}
-                      to={item.to}
+                      key={itemTo}
+                      to={itemTo}
                       onClick={onClose}
                       className={`sidebar-link${isActive ? ' active' : ''}`}
                     >
                       <ItemIcon size={16} strokeWidth={2.2} />
-                      <span>{item.label}</span>
+                      <span>{item.label ?? ''}</span>
                     </Link>
                   );
                 })
               ))}
 
-              {allGroups.filter(g => !(g.id.toLowerCase() === 'dashboard' || g.label.toLowerCase() === 'dashboard')).map((group) => {
-            const groupKey = group.id.toLowerCase();
+              {allGroups.filter(g => !(g.id?.toLowerCase() === 'dashboard' || g.label?.toLowerCase() === 'dashboard')).map((group) => {
+            const groupKey = (group.id ?? '').toLowerCase();
             const GroupIcon = GROUP_ICON_MAP[groupKey] ?? Settings;
-            const isExpanded = expandedGroups.has(group.id);
-            const hasActiveItem = group.items.some((item) => location.pathname.startsWith(item.to));
+            const isExpanded = expandedGroups.has(group.id ?? '');
+            const hasActiveItem = (group.items ?? []).some((item) => location.pathname.startsWith(item.to ?? ''));
             return (
-              <section key={group.id} className="sidebar-group">
+              <section key={group.id ?? group.label ?? `group-${groupKey}`} className="sidebar-group">
                 <button
                   className={`sidebar-group__header sidebar-group__toggle${isExpanded ? ' expanded' : ''}${hasActiveItem ? ' has-active' : ''}`}
-                  onClick={() => toggleGroup(group.id)}
+                  onClick={() => toggleGroup(group.id ?? group.label ?? '')}
                 >
                   <GroupIcon size={14} strokeWidth={2.5} />
-                  <span>{group.label}</span>
+                  <span>{group.label ?? 'Menu'}</span>
                   <span className="sidebar-group__chevron">{isExpanded ? '▲' : '▼'}</span>
                 </button>
-                {isExpanded && group.items.map((item) => {
-                  const itemKey = String(item.label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+                {isExpanded && (group.items ?? []).map((item) => {
+                  const itemKey = String(item.label ?? '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
                   const ItemIcon = ITEM_ICON_MAP[itemKey] ?? Settings;
-                  const isActive = location.pathname.startsWith(item.to);
+                  const itemTo = item.to ?? '';
+                  const isActive = location.pathname.startsWith(itemTo);
                   return (
                     <Link
-                      key={item.to}
-                      to={item.to}
+                      key={itemTo}
+                      to={itemTo}
                       onClick={onClose}
                       className={`sidebar-link${isActive ? ' active' : ''}`}
                     >
                       <ItemIcon size={16} strokeWidth={2.2} />
-                      <span>{item.label}</span>
+                      <span>{item.label ?? ''}</span>
                     </Link>
                   );
                 })}

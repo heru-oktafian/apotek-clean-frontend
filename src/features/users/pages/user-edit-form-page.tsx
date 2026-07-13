@@ -1,3 +1,17 @@
+/**
+ * @module users/pages/user-edit-form-page
+ * @description
+ * Halaman form edit data user.
+ * User bisa ubah: username, nama, role, dan status.
+ *
+ * Routing:
+ * - URL: `/system/users/:userId/edit`
+ * - Tombol "Simpan" → save + redirect ke detail user
+ * - Tombol "Cancel" → redirect ke detail user
+ *
+ * @see UserEditPage - halaman detail user
+ * @see UsersPage - halaman daftar user
+ */
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/auth-context'
@@ -5,21 +19,32 @@ import { useToast, Input, Select, Button } from '../../../components/ui'
 import { fetchUserById, updateUser } from '../api/users-api'
 import type { User } from '../types/users'
 
+/**
+ * Halaman form edit user.
+ *
+ * Layout: `page-card`
+ * - Header: judul "Edit User"
+ * - Body: form grid (username, nama, role, status) + tombol aksi
+ */
 export function UserEditFormPage() {
+  // ── Route Params ───────────────────────────────────────────────
   const { userId } = useParams()
   const navigate = useNavigate()
   const { activeToken } = useAuth()
   const toast = useToast()
 
+  // ── State ──────────────────────────────────────────────────────
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  // ── Form Fields ───────────────────────────────────────────────
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
 
+  // ── Data Loading ───────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!activeToken || !userId) return
     setLoading(true)
@@ -42,6 +67,7 @@ export function UserEditFormPage() {
     void load()
   }, [load])
 
+  // ── Form Submit ────────────────────────────────────────────────
   const handleSave = async () => {
     if (!activeToken || !userId) return
     setSaving(true)

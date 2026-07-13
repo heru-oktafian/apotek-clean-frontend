@@ -1,4 +1,26 @@
 
+/**
+ * @module dashboard/pages/dashboard-page
+ * @description
+ * Halaman dashboard utama aplikasi Apotek Ziida.
+ * Menampilkan ringkasan data penting dalam bentuk kartu statistik dan chart.
+ *
+ * Widget yang ditampilkan:
+ * - Omset & Profit hari ini (StatCard)
+ * - Omset & Profit minggu ini (WeeklyProfitCard dengan donut chart)
+ * - Profit per user hari ini (ProfitByUserCard dengan bar chart)
+ * - Tren bulanan (Line chart dari Recharts)
+ * - Fast Moving products
+ * - Slow Moving products
+ * - Near Expired products
+ *
+ * Data diambil dari `useDashboard` hook yang mengambil dari berbagai endpoint API secara paralel.
+ *
+ * @see useDashboard - hook untuk mengambil semua data dashboard
+ * @see StatCard - komponen kartu statistik
+ * @see WeeklyProfitCard - komponen donut chart omset/profit mingguan
+ * @see ProfitByUserCard - komponen profit per user
+ */
 import { DollarSign, TrendingUp, BarChart2, Activity, Menu, X } from 'lucide-react';
 import {
   LineChart,
@@ -16,6 +38,8 @@ import { useEffect, useState } from 'react'
 import { useDashboard } from '../hooks/useDashboard';
 import { formatNumber } from '../../../lib/format-currency';
 
+// ── Sub-components ───────────────────────────────────────────────
+// StatCard: Kartu statistik tunggal (icon + label + value)
 function StatCard({
   icon: Icon,
   label,
@@ -68,6 +92,7 @@ function StatCard({
   );
 }
 
+// WeeklyProfitCard: Donut chart untuk omset & profit mingguan
 function WeeklyProfitCard({ weeklyProfit }: { weeklyProfit: { profit?: number; omset?: number; total_hpp?: number } | null }) {
   const profit = weeklyProfit?.profit ?? 0;
   const omset = weeklyProfit?.omset ?? 0;
@@ -167,6 +192,7 @@ function fmtDate(dateStr: string) {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+// ProfitByUserCard: Bar chart + info panel untuk profit per user
 function ProfitByUserCard({
   data,
 }: {
@@ -236,25 +262,28 @@ function ProfitByUserCard({
   );
 }
 
+// ── Dashboard Page ─────────────────────────────────────────────
+// Halaman utama dashboard — kumpulkan semua widget di atas
 export function DashboardPage() {
+  // ── State ──────────────────────────────────────────────────────
   const [hideRefreshFab, setHideRefreshFab] = useState(false)
 
-  const {
-    dailyProfit,
-    weeklyProfit,
-    monthlyProfit,
-    profitByUser,
-    monthlyChart,
-    nearExpired,
-    topSelling,
-    leastSelling,
-    purchases,
-    sales,
-    loading,
-    error,
-    refresh,
-  } = useDashboard();
+  // ── Data (useDashboard) ─────────────────────────────────────────
+  const { data, isLoading, error, loadDashboard } = useDashboard();
 
+  // Convenience aliases — akses nested data dari hook
+  const dailyProfit = data?.dailyProfit;
+  const weeklyProfit = data?.weeklyProfit ?? null;
+  const monthlyProfit = data?.monthlyProfit;
+  const profitByUser = data?.profitByUser;
+  const monthlyChart = data?.monthlyChart ?? [];
+  const nearExpired = data?.nearExpired ?? [];
+  const topSelling = data?.topSelling ?? [];
+  const leastSelling = data?.leastSelling ?? [];
+  const loading = isLoading;
+  const refresh = loadDashboard;
+
+  // ── Effects ─────────────────────────────────────────────────────
   useEffect(() => {
     const handleToggle = (event: Event) => {
       const customEvent = event as CustomEvent<{ showMore: boolean }>;
@@ -267,6 +296,7 @@ export function DashboardPage() {
     };
   }, []);
 
+  // ── Render ─────────────────────────────────────────────────────
   if (error) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
@@ -276,6 +306,7 @@ export function DashboardPage() {
     );
   }
 
+  // ── Chart Data Processing ─────────────────────────────────────
   const chartData = (monthlyChart ?? []).map((item) => ({
     date: item.report_date ?? item.date ?? item.label ?? String(item?.day ?? ''),
     omset: item.omset ?? item.total_sales ?? item.sales ?? item.total ?? 0,
@@ -307,21 +338,21 @@ export function DashboardPage() {
         <StatCard
           icon={DollarSign}
           label="Omset Hari Ini"
-          value={loading ? '—' : formatNumber(dailyProfit?.total_sales ?? 0)}
+          value={loading ? '—' : formatNumber(dailyProfit?.omset ?? 0)}
           color="#3b82f6"
           topHeading
         />
         <StatCard
           icon={TrendingUp}
           label="Profit Hari Ini"
-          value={loading ? '—' : formatNumber(dailyProfit?.profit_estimate ?? 0)}
+          value={loading ? '—' : formatNumber(dailyProfit?.profit ?? 0)}
           color="#10b981"
           topHeading
         />
         <div className="weekly-profit-card-container">
           <WeeklyProfitCard weeklyProfit={weeklyProfit} />
         </div>
-        <ProfitByUserCard data={profitByUser} />
+        <ProfitByUserCard data={profitByUser ?? null} />
       </div>
 
       {/* Chart */}
