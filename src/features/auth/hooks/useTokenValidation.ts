@@ -25,6 +25,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth-context';
 import { authStorage } from '../../../lib/auth/storage';
+import { getProfile } from '../api';
 interface UseTokenValidationReturn {
   isValid: boolean;
   isLoading: boolean;
@@ -62,16 +63,13 @@ export function useTokenValidation(): UseTokenValidationReturn {
       setError(null);
 
       try {
-        // TODO: Panggil endpoint validasi token ke backend
-        // Contoh: const result = await validateToken(activeToken);
-        // setIsValid(result.valid);
-        // if (result.user) setToken(result.user, activeToken);
-
-        // Untuk sekarang, token dianggap valid selama ada
+        // Validate token by calling /api/profile — backend returns 401 if invalid
+        await getProfile(activeToken);
         setIsValid(true);
       } catch (err) {
         setIsValid(false);
-        setError(err instanceof Error ? err.message : 'Token validasi gagal');
+        setError(err instanceof Error ? err.message : 'Token expired atau invalid');
+        // Clear auth state — ProtectedRoute will redirect to /login
         setActiveToken(null);
         authStorage.setActiveToken(null);
       } finally {

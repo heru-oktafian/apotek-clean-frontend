@@ -4,6 +4,7 @@ import { AppSidebar } from '../components/layout/app-sidebar'
 import { DashboardTopbar } from '../components/layout/dashboard-topbar'
 import { MobileBottomBar } from '../components/layout/mobile-bottom-bar'
 import { PagePlaceholder } from '../components/common/page-placeholder'
+import { NotFoundPage } from '../components/common/not-found-page'
 import { GlobalErrorBoundary } from '../components/common/global-error-boundary'
 import { AuthProvider, useAuth } from '../features/auth/auth-context'
 import { useTokenValidation } from '../features/auth/hooks/useTokenValidation'
@@ -134,6 +135,9 @@ export function AppRouter() {
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
+
+        {/* Catch-all — halaman tidak ditemukan */}
+        <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
         </ToastProvider>
