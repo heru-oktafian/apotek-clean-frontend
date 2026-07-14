@@ -55,6 +55,20 @@
 **`useMemberCategories.ts`** — Membership >> Kategori Member page
 - Already had `normalizeMemberCategory()` and `useAuth` — confirmed working
 
+### Token Validation Fix
+**Problem:** Token invalid/expired tidak redirect ke login — dashboard tetap terlihat.
+
+**Root cause:** `useTokenValidation` baris 51-53 — stub code `setIsValid(true)` selalu return valid.
+
+**Fix:** Ganti stub dengan `getProfile(activeToken)` → call `/api/profile`. Kalau 401/error → clear token → ProtectedRoute redirect ke `/login`.
+
+### NotFoundPage — Halaman 404
+**Feature:** Halaman 404 yang elegan, pharmacy green theme.
+- Component: `src/components/common/not-found-page.tsx`
+- Tombol "Kembali" + "Ke Dashboard"
+- CSS background decoration, gradient badge, responsive
+- Catch-all route `path="*"` di router.tsx lempar ke `NotFoundPage`
+
 ### Reusable Components Status
 **Done:**
 - `Table<T>` — generic, all pages use it
@@ -85,6 +99,8 @@ Wired all 9 dashboard endpoints:
 Login → Set Branch → Dashboard → Master Data → Transaksi → Laporan → Pengaturan
 
 ### Git Commits
+- `NotFoundPage` (2026-07-14): feat(404): elegant NotFoundPage + catch-all route
+- `TokenValidation` (2026-07-14): fix(auth): validate token via /api/profile, redirect on 401
 - `d01d61b` (2026-07-14): fix(sidebar): transform API MenuRole[] to NavGroup[], fix field mapping
 - `1c71e85`: refactor(api): standardize all API & types files with JSDoc, Payload interfaces
 - `032230a`: refactor: unify UI pattern across 8 pages
