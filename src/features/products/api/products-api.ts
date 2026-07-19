@@ -1,29 +1,18 @@
 import { apiRequest } from '../../../lib/api/client';
 import { buildApiUrl } from '../../../lib/api/env';
-import type { ProductCategory, Product, Unit, ComboResponse, ProductsListResponse } from '../types/products';
-
-export interface ProductDetail extends Product {
-  unit_id: string;
-  product_category_id: number;
-}
-
-export interface ProductDetailResponse {
-  status: string;
-  message: string;
-  data: ProductDetail[];
-}
+import type { ProductCategory, Product, ProductDetail, ProductDetailResponse, Unit, ComboResponse, ProductsListResponse } from '../types/products';
 
 /**
  * Fetch product detail by ID — returns both FK IDs and names
  * Used for: edit form population (needs unit_id & product_category_id)
- * Endpoint: GET /api/products/:id (URL param, not query param)
+ * Endpoint: GET /api/products/:id (URL param)
  */
 export async function fetchProductById(token: string, id: string): Promise<ProductDetail> {
   const response = await apiRequest<ProductDetailResponse>(
     `/api/products/${encodeURIComponent(id)}`,
     { token }
   );
-  const data = (response as ProductDetailResponse).data;
+  const data = response.data;
   if (!data || data.length === 0) {
     throw new Error('Produk tidak ditemukan');
   }

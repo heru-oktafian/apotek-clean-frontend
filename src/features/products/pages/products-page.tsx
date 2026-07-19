@@ -17,7 +17,7 @@ import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from
 import { ListSearchBar } from '../../../components/list/ListSearchBar';
 import { ActionToolbar } from '../../../components/list/ActionToolbar';
 import { useListSearch } from '../../../hooks/useListSearch';
-import type { Product, ProductCategory, Unit } from '../types/products';
+import type { Product, ProductDetail, ProductDetailResponse, ProductCategory, Unit } from '../types/products';
 
 interface ProductWithIndex extends Product {
   _index?: number;
