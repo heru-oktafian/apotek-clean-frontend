@@ -1266,3 +1266,20 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Last Updated**: 2026-07-20
 **Status**: ✅ Complete (pilot phase 1 — products page only)
+
+---
+
+### 19. Fix: FormModal Submit Button Tidak Berfungsi
+**Tanggal**: 2026-07-20
+**File**: `src/features/products/pages/products-page.tsx`
+**Commit**: `d9fe959`
+
+**Bug**: Setelah replace `<Modal>` dengan `<FormModal>` (entry 18), button "Simpan" di modal edit/add tidak berfungsi.
+
+**Root Cause**: `FormModal` default footer pakai `type="button"` + `onClick={onSubmit}` — bypasses `<form>` submission. `<form>` `onSubmit` handler (yang call `e.preventDefault()`) tidak pernah fire. Button di-click → `onSubmit()` dipanggil langsung → `handleProductFormSubmit` menerima dummy event yang tidak punya `e.preventDefault()` → submit jalan tanpa `e.preventDefault()` → browser native form submission fire → page reload.
+
+**Fix**: Custom footer button dengan `type="button"` + `onClick` yang langsung call `handleProductFormSubmit()` dengan mock event object. Pattern ini aman karena `handleProductFormSubmit` hanya pakai `e.preventDefault()` (manual call) dan `e.stopPropagation()` (tidak ada).
+
+**Dampak**: Submit button sekarang berfungsi normal. Button warna amber (edit) / hijau (add) tetap dipertahankan.
+
+**Status**: ✅ Fixed
