@@ -1153,3 +1153,30 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Last Updated**: 2026-07-19
 **Status**: ✅ Complete
+
+---
+
+### 16. Fix Product Create/Update — Int Type Casting & Date Format
+**Tanggal**: 2026-07-19
+**File Utama**:
+- `src/features/products/api/products-api.ts`
+
+**Commit**: `ace1ad2` — "fix(products): cast price/category fields to int + fix date format for Go backend"
+
+**Root Cause**:
+- Backend Go `Product` model: `purchase_price int`, `sales_price int`, `alternate_price int`, `product_category_id uint`
+- Frontend HTML `type="number"` kirim sebagai float (misal: `15000.0`)
+- Backend gagal parse karena field-nya `int`, bukan `float` → 422 error
+- `expired_date` dikirim sebagai `"2026-12-31"`, Go GORM butuh RFC3339
+
+**Fix**:
+- Tambah helper `toBackendDate()`: konversi `"2026-12-31"` → `"2026-12-31T12:00:00Z"` (RFC3339)
+- Wrap `createProduct()` & `updateProduct()`: `Math.round()` semua field numerik + `toBackendDate()` untuk tanggal
+
+**Dampak**:
+- Create produk → ✅ seharusnya berhasil
+- Update produk → ✅ seharusnya berhasil
+- Delete → ❌ masih TODO
+
+**Last Updated**: 2026-07-19
+**Status**: ✅ Complete (Create & Update)
