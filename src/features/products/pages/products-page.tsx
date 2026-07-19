@@ -359,11 +359,6 @@ export function ProductsPage() {
       },
     },
     {
-      key: 'sku',
-      header: 'SKU',
-      render: (row) => row.sku,
-    },
-    {
       key: 'name',
       header: 'Nama',
       render: (row) => row.name,
@@ -373,12 +368,6 @@ export function ProductsPage() {
       key: 'alias',
       header: 'Alias',
       render: (row) => row.alias || '-',
-      align: 'left',
-    },
-    {
-      key: 'product_category_name',
-      header: 'Kategori',
-      render: (row) => row.product_category_name,
       align: 'left',
     },
     {
