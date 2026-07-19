@@ -13,9 +13,11 @@ import {
   updateProduct,
   deleteProduct,
 } from '../api/products-api';
-import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
+import { toast, Table, Button, Input, Pagination, Select, FormField, type TableColumn } from '../../../components/ui';
 import { ListSearchBar } from '../../../components/list/ListSearchBar';
 import { ActionToolbar } from '../../../components/list/ActionToolbar';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { FormModal } from '../../../components/common/FormModal';
 import { useListSearch } from '../../../hooks/useListSearch';
 import type { Product, ProductDetail, ProductDetailResponse, ProductCategory, Unit } from '../types/products';
 
@@ -506,230 +508,219 @@ export function ProductsPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
+      {/* Delete Confirmation */}
+      <ConfirmDialog
         open={isDeleteConfirmOpen}
         onClose={closeDeleteConfirm}
+        onConfirm={handleConfirmDeleteProduct}
         title="Hapus Produk"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-700">
-            Yakin ingin menghapus produk <strong>{deleteTarget?.name}</strong>?
-          </p>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={closeDeleteConfirm}>Batal</Button>
-            <Button type="button" variant="danger" onClick={handleConfirmDeleteProduct} disabled={isDeleting}>
-              {isDeleting ? 'Menghapus...' : 'Hapus'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        message={<>Yakin ingin menghapus produk <strong>{deleteTarget?.name}</strong>?</>}
+        confirmLabel="Hapus"
+        isLoading={isDeleting}
+      />
 
-      {/* Edit Product Modal */}
-      <Modal
+      {/* Edit / Add Product Modal */}
+      <FormModal
         open={isEditOpen}
         onClose={closeEditProduct}
         title={editingProduct ? 'Ubah Produk' : 'Tambah Produk'}
         size="xl"
+        onSubmit={handleProductFormSubmit}
+        isSubmitting={isSubmitting}
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={closeEditProduct} disabled={isSubmitting}>Batal</Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className={
+                editingProduct
+                  ? 'bg-amber-500 hover:bg-amber-600 text-slate-900'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              }
+            >
+              {isSubmitting ? 'Menyimpan...' : (editingProduct ? 'Simpan' : 'Tambahkan')}
+            </Button>
+          </>
+        }
       >
         {isFetchingDetail ? (
           <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
             Memuat data produk...
           </div>
         ) : (
-        <form onSubmit={handleProductFormSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Input
-                placeholder="SKU"
-                value={formData.sku}
-                onChange={(e) => {
-                  setFormData({ ...formData, sku: e.target.value });
-                  if (formErrors.sku) setFormErrors({ ...formErrors, sku: undefined });
-                }}
-                aria-label="SKU"
-              />
-              {formErrors.sku && <p className="text-sm text-red-600 mt-1">{formErrors.sku}</p>}
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField error={formErrors.sku}>
+                <Input
+                  placeholder="SKU"
+                  value={formData.sku}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value });
+                    if (formErrors.sku) setFormErrors({ ...formErrors, sku: undefined });
+                  }}
+                  aria-label="SKU"
+                />
+              </FormField>
+              <FormField error={formErrors.name}>
+                <Input
+                  placeholder="Nama produk"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+                  }}
+                  aria-label="Nama produk"
+                />
+              </FormField>
             </div>
-            <div>
-              <Input
-                placeholder="Nama produk"
-                value={formData.name}
-                onChange={(e) => {
-                  setFormData({ ...formData, name: e.target.value });
-                  if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
-                }}
-                aria-label="Nama produk"
-              />
-              {formErrors.name && <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <select
-                value={String(formData.product_category_id)}
-                onChange={(e) => {
-                  setFormData({ ...formData, product_category_id: Number(e.target.value) });
-                  if (formErrors.product_category_id) setFormErrors({ ...formErrors, product_category_id: undefined });
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                aria-label="Kategori produk"
-              >
-                <option value="0">Pilih Kategori Produk</option>
-                {productCategories.map((category) => (
-                  <option key={category.product_category_id} value={String(category.product_category_id)}>
-                    {category.product_category_name}
-                  </option>
-                ))}
-              </select>
-              {formErrors.product_category_id && <p className="text-sm text-red-600 mt-1">{formErrors.product_category_id}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <FormField error={formErrors.product_category_id}>
+                <Select
+                  value={String(formData.product_category_id)}
+                  onChange={(e) => {
+                    setFormData({ ...formData, product_category_id: Number(e.target.value) });
+                    if (formErrors.product_category_id) setFormErrors({ ...formErrors, product_category_id: undefined });
+                  }}
+                  aria-label="Kategori produk"
+                  error={Boolean(formErrors.product_category_id)}
+                >
+                  <option value="0">Pilih Kategori Produk</option>
+                  {productCategories.map((category) => (
+                    <option key={category.product_category_id} value={String(category.product_category_id)}>
+                      {category.product_category_name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField error={formErrors.unit_id}>
+                <Select
+                  value={formData.unit_id}
+                  onChange={(e) => {
+                    setFormData({ ...formData, unit_id: e.target.value });
+                    if (formErrors.unit_id) setFormErrors({ ...formErrors, unit_id: undefined });
+                  }}
+                  aria-label="Satuan produk"
+                  error={Boolean(formErrors.unit_id)}
+                >
+                  <option value="">Pilih Satuan</option>
+                  {units.map((unit) => (
+                    <option key={unit.unit_id} value={unit.unit_id}>
+                      {unit.unit_name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
             </div>
-            <div>
-              <select
-                value={formData.unit_id}
-                onChange={(e) => {
-                  setFormData({ ...formData, unit_id: e.target.value });
-                  if (formErrors.unit_id) setFormErrors({ ...formErrors, unit_id: undefined });
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                aria-label="Satuan produk"
-              >
-                <option value="">Pilih Satuan</option>
-                {units.map((unit) => (
-                  <option key={unit.unit_id} value={unit.unit_id}>
-                    {unit.unit_name}
-                  </option>
-                ))}
-              </select>
-              {formErrors.unit_id && <p className="text-sm text-red-600 mt-1">{formErrors.unit_id}</p>}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-left text-xs text-slate-600 mb-1">Alias</label>
-              <Input
-                placeholder="Alias"
-                value={formData.alias}
-                onChange={(e) => {
-                  setFormData({ ...formData, alias: e.target.value });
-                }}
-                aria-label="Alias"
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Alias">
+                <Input
+                  placeholder="Alias"
+                  value={formData.alias}
+                  onChange={(e) => {
+                    setFormData({ ...formData, alias: e.target.value });
+                  }}
+                  aria-label="Alias"
+                />
+              </FormField>
+              <FormField label="Expired Date" error={formErrors.expired_date}>
+                <Input
+                  type="date"
+                  value={formData.expired_date}
+                  onChange={(e) => setFormData({ ...formData, expired_date: e.target.value })}
+                  aria-label="Tanggal kedaluwarsa"
+                />
+              </FormField>
+            </div>
+
+            <FormField>
+              <textarea
+                placeholder="Deskripsi"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                rows={2}
+                aria-label="Deskripsi produk"
               />
+            </FormField>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField>
+                <textarea
+                  placeholder="Bahan aktif"
+                  value={formData.ingredient}
+                  onChange={(e) => setFormData({ ...formData, ingredient: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  rows={2}
+                  aria-label="Bahan aktif"
+                />
+              </FormField>
+              <FormField>
+                <textarea
+                  placeholder="Dosis"
+                  value={formData.dosage}
+                  onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  rows={2}
+                  aria-label="Dosis"
+                />
+              </FormField>
             </div>
-            <div>
-              <label className="block text-left text-xs text-slate-600 mb-1">Expired Date</label>
-              <Input
-                type="date"
-                value={formData.expired_date}
-                onChange={(e) => setFormData({ ...formData, expired_date: e.target.value })}
-                aria-label="Tanggal kedaluwarsa"
+
+            <FormField>
+              <textarea
+                placeholder="Efek samping"
+                value={formData.side_affection}
+                onChange={(e) => setFormData({ ...formData, side_affection: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                rows={2}
+                aria-label="Efek samping"
               />
-              {formErrors.expired_date && <p className="text-sm text-red-600 mt-1">{formErrors.expired_date}</p>}
+            </FormField>
+
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="Beli" error={formErrors.purchase_price}>
+                <Input
+                  type="number"
+                  className="text-right"
+                  placeholder="Beli"
+                  value={String(formData.purchase_price)}
+                  onChange={(e) => {
+                    setFormData({ ...formData, purchase_price: Number(e.target.value) });
+                    if (formErrors.purchase_price) setFormErrors({ ...formErrors, purchase_price: undefined });
+                  }}
+                  aria-label="Harga beli"
+                />
+              </FormField>
+              <FormField label="Jual" error={formErrors.sales_price}>
+                <Input
+                  type="number"
+                  className="text-right"
+                  placeholder="Jual"
+                  value={String(formData.sales_price)}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sales_price: Number(e.target.value) });
+                    if (formErrors.sales_price) setFormErrors({ ...formErrors, sales_price: undefined });
+                  }}
+                  aria-label="Harga jual"
+                />
+              </FormField>
+              <FormField label="Harga Alternatif">
+                <Input
+                  type="number"
+                  className="text-right"
+                  placeholder="Harga Alternatif"
+                  value={String(formData.alternate_price)}
+                  onChange={(e) => setFormData({ ...formData, alternate_price: Number(e.target.value) })}
+                  aria-label="Harga alternatif"
+                />
+              </FormField>
             </div>
-          </div>
-
-          <div>
-            <textarea
-              placeholder="Deskripsi"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              rows={2}
-              aria-label="Deskripsi produk"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <textarea
-              placeholder="Bahan aktif"
-              value={formData.ingredient}
-              onChange={(e) => setFormData({ ...formData, ingredient: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              rows={2}
-              aria-label="Bahan aktif"
-            />
-            <textarea
-              placeholder="Dosis"
-              value={formData.dosage}
-              onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              rows={2}
-              aria-label="Dosis"
-            />
-          </div>
-
-          <div>
-            <textarea
-              placeholder="Efek samping"
-              value={formData.side_affection}
-              onChange={(e) => setFormData({ ...formData, side_affection: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              rows={2}
-              aria-label="Efek samping"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-left text-xs text-slate-600 mb-1">Beli</label>
-              <Input
-                type="number"
-                className="text-right"
-                placeholder="Beli"
-                value={String(formData.purchase_price)}
-                onChange={(e) => {
-                  setFormData({ ...formData, purchase_price: Number(e.target.value) });
-                  if (formErrors.purchase_price) setFormErrors({ ...formErrors, purchase_price: undefined });
-                }}
-                aria-label="Harga beli"
-              />
-              {formErrors.purchase_price && <p className="text-sm text-red-600 mt-1">{formErrors.purchase_price}</p>}
-            </div>
-            <div>
-              <label className="block text-left text-xs text-slate-600 mb-1">Jual</label>
-              <Input
-                type="number"
-                className="text-right"
-                placeholder="Jual"
-                value={String(formData.sales_price)}
-                onChange={(e) => {
-                  setFormData({ ...formData, sales_price: Number(e.target.value) });
-                  if (formErrors.sales_price) setFormErrors({ ...formErrors, sales_price: undefined });
-                }}
-                aria-label="Harga jual"
-              />
-              {formErrors.sales_price && <p className="text-sm text-red-600 mt-1">{formErrors.sales_price}</p>}
-            </div>
-            <div>
-              <label className="block text-left text-xs text-slate-600 mb-1">Harga Alternatif</label>
-              <Input
-                type="number"
-                className="text-right"
-                placeholder="Harga Alternatif"
-                value={String(formData.alternate_price)}
-                onChange={(e) => setFormData({ ...formData, alternate_price: Number(e.target.value) })}
-                aria-label="Harga alternatif"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={closeEditProduct}>Batal</Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-              className={editingProduct ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-green-600 hover:bg-green-700 text-white'}
-            >
-              {isSubmitting ? 'Menyimpan...' : (editingProduct ? 'Simpan' : 'Tambahkan')}
-            </Button>
-          </div>
-        </form>
+          </>
         )}
-      </Modal>
+      </FormModal>
 
       {/* Pagination */}
       <Pagination

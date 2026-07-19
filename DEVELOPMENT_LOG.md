@@ -1220,3 +1220,49 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Last Updated**: 2026-07-20
 **Status**: ✅ Complete
+
+---
+
+### 18. Refactor Master Produk — Maksimalkan Reusable Components (Pilot)
+**Tanggal**: 2026-07-20
+**File Utama**:
+- `src/features/products/pages/products-page.tsx` (743 → 734 baris)
+- `src/components/common/ConfirmDialog.tsx` (perubahan interface)
+
+**Commit**: `7c2e06b`
+
+**Latar Belakang**:
+- Audit menemukan `Master >> Produk` cuma pakai ~40% dari reusable component yang sudah tersedia
+- 4 dari 7 master page meng-`import ConfirmDialog` tapi **TIDAK ADA satupun** yang pakai di JSX (orphan imports)
+- `FormModal` total orphan (0 import + 0 usage) — reusable component yang belum pernah di-adopt
+- Page ini dijadikan **pilot** untuk membuktikan pattern adopsi reusable component
+- Aturan **NO CSS TOUCHING** tetap dihormati — tidak ada className existing yang diubah
+
+**Komponen yang Diadopsi**:
+| Component | Sebelum | Sesudah | Manfaat |
+|---|---|---|---|
+| `ConfirmDialog` | `<Modal>` manual + `<Button>` | `<ConfirmDialog>` (drop-in) | Hapus ~17 baris wrapper/delete confirm boilerplate |
+| `FormModal` | `<Modal>` manual + `<form>` + footer | `<FormModal>` + custom footer (preserve green/amber) | Modal shell + form wrapper + close-on-backdrop/Esc reusable |
+| `FormField` | `<div>` + `<Input>` + `<p>` error manual ×12 | `<FormField error={...}>` (×12) | Pattern berulang ter-unify; label + error display built-in |
+| `Select` | Native `<select>` ×2 | `<Select>` ×2 dengan `error` prop | Konsisten styling + error border |
+
+**Pertahanan UX Existing**:
+- Submit button Add (hijau) vs Edit (amber) → **dipertahankan** via custom `footer` prop di `FormModal` (karena FormModal cuma support `submitVariant='primary'|'danger'`, dan `bg-primary` Tailwind color tidak terdefinisi di project ini)
+- Submit button pakai `type="submit"` → FormModal's internal `<form>` onSubmit handler tetap trigger → `handleProductFormSubmit` dapat `React.FormEvent` (bukan MouseEvent), sesuai signature
+
+**Perubahan Reusable Component** (1 file):
+- `ConfirmDialog.tsx`: widen `message: string` → `message: ReactNode` (backward compat) — untuk dukung inline `<strong>{name}</strong>` di pesan konfirmasi. Pure TS interface widening, no visual/behavior change untuk caller existing.
+
+**Yang TIDAK dilakukan pada pilot ini** (untuk refactor lanjutan):
+- `ListTablePage` (282 baris wrapper) → masih 0 page adoption. Pakai di pilot ini = high risk (BEM-style class `list-page__*` vs inline Tailwind). Pilot ini fokus dulu ke FormModal/ConfirmDialog/FormField/Select adoption.
+- `EmptyState` → Table component sudah handle empty state built-in (`emptyText` prop), tidak perlu wrapper tambahan.
+- `formatCurrency` inline → biarkan, utility bukan component, dan inline-nya cuma 7 baris.
+- Textarea fields (5 buah) di-wrap dengan FormField tanpa label/error → wrapper tipis untuk konsistensi struktur, tapi tanpa visual impact.
+
+**Dampak**:
+- Pattern reusable component adoption pertama yang aktual di project
+- Menjadi template untuk pilot lanjutan ke 3 page master lain (categories, members, member-categories) yang masih pakai raw `<Modal>` untuk delete confirm
+- Bundle baru: `index-B2IVB-qp.js` (hash berubah dari `index-mmMspFrM.js`)
+
+**Last Updated**: 2026-07-20
+**Status**: ✅ Complete (pilot phase 1 — products page only)
