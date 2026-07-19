@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'edit';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -20,11 +20,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={clsx(
           'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
           {
-            'bg-primary text-white hover:bg-primary/90 focus:ring-primary': variant === 'primary',
+            'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500': variant === 'primary',
             'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400': variant === 'secondary',
             'border border-slate-300 text-slate-700 hover:bg-slate-50 focus:ring-slate-400': variant === 'outline',
             'text-slate-600 hover:bg-slate-100 focus:ring-slate-400': variant === 'ghost',
             'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': variant === 'danger',
+            'bg-amber-500 text-slate-900 hover:bg-amber-600 focus:ring-amber-400': variant === 'edit',
           },
           {
             'px-3 py-1.5 text-sm': size === 'sm',

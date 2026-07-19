@@ -306,7 +306,7 @@ export function UnitsPage() {
             <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
             <Button
               type="submit"
-              variant={editingUnit ? 'outline' : 'primary'}
+              variant={editingUnit ? 'edit' : 'primary'}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Menyimpan...' : editingUnit ? 'Simpan' : 'Tambahkan'}
