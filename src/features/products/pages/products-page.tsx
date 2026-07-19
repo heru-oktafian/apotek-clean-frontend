@@ -5,11 +5,13 @@ import { useProducts } from '../hooks/useProducts';
 import {
   createProduct,
   fetchProductCategoriesCombo,
+  fetchProductById,
   fetchUnitsCombo,
   downloadProductLabel,
   downloadProductsExcel,
   downloadProductsPDF,
   updateProduct,
+  deleteProduct,
 } from '../api/products-api';
 import { toast, Table, Modal, Button, Input, Pagination, type TableColumn } from '../../../components/ui';
 import { ListSearchBar } from '../../../components/list/ListSearchBar';
@@ -50,6 +52,7 @@ export function ProductsPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingDetail, setIsFetchingDetail] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
@@ -168,23 +171,38 @@ export function ProductsPage() {
     setIsEditOpen(true);
   };
 
-  const openEditProduct = (product: Product) => {
+  const openEditProduct = async (product: Product) => {
+    if (!activeToken) {
+      toast.error('Token tidak tersedia, login ulang.');
+      return;
+    }
     setEditingProduct(product);
-    setFormData({
-      sku: product.sku,
-      name: product.name,
-      alias: product.alias ?? '',
-      description: product.description ?? '',
-      ingredient: product.ingredient ?? '',
-      dosage: product.dosage ?? '',
-      side_affection: product.side_affection ?? '',
-      product_category_id: product.product_category_id,
-      unit_id: product.unit_id,
-      purchase_price: product.purchase_price,
-      sales_price: product.sales_price,
-      alternate_price: product.alternate_price,
-      expired_date: product.expired_date ? product.expired_date.split('T')[0] : '',
-    });
+    setIsFetchingDetail(true);
+    try {
+      const detail = await fetchProductById(activeToken, product.id);
+      setFormData({
+        sku: detail.sku,
+        name: detail.name,
+        alias: detail.alias ?? '',
+        description: detail.description ?? '',
+        ingredient: detail.ingredient ?? '',
+        dosage: detail.dosage ?? '',
+        side_affection: detail.side_affection ?? '',
+        product_category_id: detail.product_category_id,
+        unit_id: detail.unit_id,
+        purchase_price: detail.purchase_price,
+        sales_price: detail.sales_price,
+        alternate_price: detail.alternate_price,
+        expired_date: detail.expired_date ? detail.expired_date.split('T')[0] : '',
+      });
+    } catch (error) {
+      console.error('Gagal mengambil detail produk:', error);
+      toast.error('Gagal mengambil data produk untuk diedit.');
+      setEditingProduct(null);
+      return;
+    } finally {
+      setIsFetchingDetail(false);
+    }
     setFormErrors({});
     setIsEditOpen(true);
   };
@@ -210,13 +228,13 @@ export function ProductsPage() {
 
     setIsDeleting(true);
     try {
-      // TODO: Implement delete endpoint when available
-      toast.info('Fitur hapus produk akan diimplementasikan.');
+      await deleteProduct(activeToken, deleteTarget.id);
+      toast.success('Produk berhasil dihapus.');
       closeDeleteConfirm();
       loadProducts(1, activeSearch);
     } catch (error) {
       console.error(error);
-      toast.error('Gagal menghapus produk.');
+      toast.error(error instanceof Error ? error.message : 'Gagal menghapus produk.');
     } finally {
       setIsDeleting(false);
     }
@@ -514,6 +532,11 @@ export function ProductsPage() {
         title={editingProduct ? 'Ubah Produk' : 'Tambah Produk'}
         size="xl"
       >
+        {isFetchingDetail ? (
+          <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+            Memuat data produk...
+          </div>
+        ) : (
         <form onSubmit={handleProductFormSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -697,12 +720,14 @@ export function ProductsPage() {
             <Button
               type="submit"
               variant="primary"
+              disabled={isSubmitting}
               className={editingProduct ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-green-600 hover:bg-green-700 text-white'}
             >
-              {editingProduct ? 'Simpan' : 'Tambahkan'}
+              {isSubmitting ? 'Menyimpan...' : (editingProduct ? 'Simpan' : 'Tambahkan')}
             </Button>
           </div>
         </form>
+        )}
       </Modal>
 
       {/* Pagination */}

@@ -8,6 +8,9 @@ export interface Unit {
   unit_name: string;
 }
 
+// Product — display model (GET response, read-only list view)
+// Pola: FK IDs tidak ada di sini, hanya resolved names
+// stock/showcase_stock/warehouse_stock adalah read-only (tidak bisa diedit lewat master product)
 export interface Product {
   id: string;
   sku: string;
@@ -17,14 +20,14 @@ export interface Product {
   ingredient: string;
   dosage: string;
   side_affection: string;
-  unit_id: string;
   unit_name: string;
   stock: number;
+  showcase_stock: number;
+  warehouse_stock: number;
   purchase_price: number;
-  expired_date: string;
   sales_price: number;
   alternate_price: number;
-  product_category_id: number;
+  expired_date: string;
   product_category_name: string;
 }
 
