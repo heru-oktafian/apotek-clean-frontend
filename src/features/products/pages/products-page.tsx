@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Edit2, Trash2, RefreshCw, Download } from 'lucide-react';
+import { Edit2, Trash2, RefreshCw, Download, Loader2 } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useProducts } from '../hooks/useProducts';
 import {
@@ -75,7 +75,7 @@ export function ProductsPage() {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
   // Download states
-  const [isDownloadingLabel, setIsDownloadingLabel] = useState(false);
+  const [downloadingLabelIds, setDownloadingLabelIds] = useState<Set<string>>(new Set());
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
 
@@ -293,7 +293,11 @@ export function ProductsPage() {
       return;
     }
 
-    setIsDownloadingLabel(true);
+    setDownloadingLabelIds((prev) => {
+      const next = new Set(prev);
+      next.add(product.id);
+      return next;
+    });
     try {
       await downloadProductLabel(activeToken, product.id, 1);
       toast.success('Label produk berhasil diunduh.');
@@ -301,7 +305,11 @@ export function ProductsPage() {
       console.error(error);
       toast.error(error instanceof Error ? error.message : 'Gagal mengunduh label produk.');
     } finally {
-      setIsDownloadingLabel(false);
+      setDownloadingLabelIds((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
     }
   };
 
@@ -418,11 +426,15 @@ export function ProductsPage() {
           <button
             type="button"
             onClick={() => handleDownloadLabel(row)}
-            disabled={isDownloadingLabel}
+            disabled={downloadingLabelIds.has(row.id)}
             className="inline-flex items-center justify-center p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors disabled:opacity-50"
-            title="Unduh Label"
+            title={downloadingLabelIds.has(row.id) ? 'Mengunduh label...' : 'Unduh Label'}
           >
-            <Download size={14} />
+            {downloadingLabelIds.has(row.id) ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
           </button>
           <button
             type="button"

@@ -1180,3 +1180,43 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Last Updated**: 2026-07-19
 **Status**: ✅ Complete (Create & Update)
+
+---
+
+### 17. Fix Tombol Unduh Label di Master Produk — Berkedip di Semua Baris
+**Tanggal**: 2026-07-20
+**File Utama**:
+- `src/features/products/pages/products-page.tsx`
+
+**Commit**: `ffe8e1e`
+
+**Root Cause**:
+- State loading pakai single boolean `isDownloadingLabel` (boolean bersama di level page, bukan per-row)
+- Tombol unduh label di setiap baris memakai `disabled={isDownloadingLabel}` → SEMUA tombol unduh di tabel dapat `disabled:opacity-50` barengan
+- Visual efeknya: saat klik tombol unduh di satu baris, semua tombol unduh di halaman redup bersamaan — dianggap "berkedip semua" oleh user
+- Edit/Hapus tidak kena karena keduanya buka modal (langsung selesai, tidak ada loading state async yang dishare)
+- Hanya produk page yang punya pola download **per-row**; halaman lain (kategori, satuan, dll) export via toolbar (semua baris) jadi boolean bersama tidak masalah
+
+**Fix** (2 iterasi):
+- **Iterasi 1** (gagal): ganti `isDownloadingLabel: boolean` → `downloadingLabelId: string | null`
+  - Tetep salah karena `disabled={downloadingLabelId !== null}` masih disable SEMUA tombol
+  - `disabled:opacity-50` tetap kena ke semua baris → user masih melihat "berkedip semua"
+  - Yang berubah cuma icon spinner di baris yang diklik, tapi efek dim masih global
+- **Iterasi 2** (final): ganti jadi `downloadingLabelIds: Set<string>` (Set of IDs)
+  - `disabled={downloadingLabelIds.has(row.id)}` → CUMA tombol baris itu yang disable
+  - Baris lain tetap: icon `Download`, full opacity, hover normal, tetap clickable
+  - Icon swap dari `Download` ke `Loader2` dengan `animate-spin` hanya pada baris yang sedang unduh
+  - `title` tooltip dinamis: `"Unduh Label"` (idle) ↔ `"Mengunduh label..."` (loading)
+  - Set-based tracking: per-row anti double-click, tapi concurrent download di baris berbeda dimungkinkan
+  - Import tambahan: `Loader2` dari `lucide-react` (pola sama dengan `RefreshCw animate-spin` di page yang sama)
+  - TIDAK ada perubahan `className`/CSS sama sekali — sesuai aturan "NO CSS TOUCHING"
+
+**Dampak**:
+- Klik tombol "Unduh Label" di satu baris → HANYA baris itu yang menunjukkan spinner berputar + sedikit redup
+- Baris lain **benar-benar tidak berubah visual** (icon, warna, hover — semua normal)
+- Mencegah double-click per baris (race condition tetap aman)
+- Bundle hasil rebuild: `index-mmMspFrM.js` (hash berubah dari `index-W4mNVVbo.js` sebelum fix)
+- User perlu **hard refresh** (Ctrl+Shift+R / Cmd+Shift+R) untuk melewati cache browser
+
+**Last Updated**: 2026-07-20
+**Status**: ✅ Complete
