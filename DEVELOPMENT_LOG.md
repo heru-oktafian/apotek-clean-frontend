@@ -1122,3 +1122,34 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Last Updated**: 2026-07-19 - Sidebar Icons Updated
 **Status**: ✅ Complete
+
+---
+
+### 15. Fix Group Icon Mapping — normalizeGroupKey()
+**Tanggal**: 2026-07-19
+**File Utama**:
+- `src/features/menu/hooks/useMenu.ts`
+
+**Commit**: `fabfe36` — "fix: add normalizeGroupKey() to ensure group menu keys match GROUP_ICON_MAP"
+
+**Root Cause**:
+- API `/api/menus` mengembalikan `group_menu` sebagai string mentah: `master`, `user manage`, `user-manage`, dll
+- `GROUP_ICON_MAP` menggunakan key canonical: `masters`, `user_manage`
+- `groupKey` diambil langsung dari `item.group_menu.toLowerCase()` tanpa normalisasi
+- Akibatnya: `GROUP_ICON_MAP['master']` → `undefined` → fallback ke `Settings` (gear) untuk SEMUA group
+
+**Fix**:
+- Tambah fungsi `normalizeGroupKey(raw)` yang mengkonversi:
+  - `master` / `Master` → `masters`
+  - `user manage` / `user-manage` / `usermanage` → `user_manage`
+  - `user_manage` / `user_manage2` → `user_manage`
+  - `report` / `reports` → `laporan`
+- Panggil di `transformMenuRolesToNavGroups()` sebelum lookup `GROUP_ICON_MAP` dan sebelum simpan ke `groups` Record
+
+**Dampak**:
+- Group icon Master → `Database` ✅
+- Group icon User Manage → `Shield` ✅
+- Semua group icon sekarang resolve dengan benar
+
+**Last Updated**: 2026-07-19
+**Status**: ✅ Complete
