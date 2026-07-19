@@ -31,6 +31,20 @@ export interface Product {
   product_category_name: string;
 }
 
+// ProductDetail — detail model (GET by ID response, for edit form population)
+// Pola: contains both FK IDs (for form submission) AND resolved names (for display)
+export interface ProductDetail extends Product {
+  unit_id: string;
+  product_category_id: number;
+  branch_id: string;
+}
+
+export interface ProductDetailResponse {
+  status: string;
+  message: string;
+  data: ProductDetail[];
+}
+
 export interface ProductsListResponse {
   status: string;
   message: string;
