@@ -22,23 +22,25 @@ import { getMenus } from '../api/menu-api';
 import type { MenuApiResponse, NavGroup } from '../../../types/menu';
 import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle, Banknote, BarChart3, BookOpen, Boxes, Building2,
-  Calendar, CircleDollarSign, ClipboardCheck, ClipboardList, Columns,
-  CreditCard, IdCard, LayoutDashboard, Network, Package,
-  Receipt, RotateCcw, Settings, ShoppingBag, ShoppingCart, Tags,
-  Truck, User, UserCog, Wallet,
+  AlertTriangle, ArrowLeftRight, Banknote, BarChart3, BookOpen, Boxes, Building,
+  Building2, Calendar, CircleDollarSign, ClipboardCheck, ClipboardList,
+  ClipboardSignature, Columns, CreditCard, Database, FileText, FileUp, IdCard,
+  LayoutDashboard, Layers, List, LogOut, Maximize2, MinusCircle, Network, Package,
+  PlusSquare, Receipt, RotateCcw, Settings, Settings2, Shield, ShoppingBag,
+  ShoppingBasket, ShoppingCart, Tags, TrendingDown, TrendingUp, Truck, User, UserCog,
+  Users, Wallet,
 } from 'lucide-react';
 
 // Icon per group_menu (key = lowercase group_menu)
 const GROUP_ICON_MAP: Record<string, LucideIcon> = {
   dashboard:    LayoutDashboard,
-  masters:      Boxes,
+  masters:      Database,
   transaksi:    ShoppingCart,
   finance:      CircleDollarSign,
-  laporan:      ClipboardList,
-  membership:   Tags,
-  user_manage:  UserCog,
-  settings:     Settings,
+  laporan:      BarChart3,
+  membership:   Users,
+  user_manage:  Shield,
+  settings:     Settings2,
 };
 
 // ── Session Cache ────────────────────────────────────────────────────────────
@@ -204,44 +206,75 @@ export function clearMenuCache() {
  * filterMenuByRole(groups, 'Staff');
  */
 // ── Item Icon Map ───────────────────────────────────────────────────────────
-// Icon per title item
+// Icon per title item (key = lowercase, underscore-separated)
 const ITEM_ICON_MAP: Record<string, LucideIcon> = {
+  // ── Auth & Profile ──────────────────────────────────
   dashboard:          LayoutDashboard,
-  produk:             Package,
-  kategori_produk:    Tags,
-  supplier:           Truck,
-  kategori_supplier:  Tags,
-  pelanggan:          User,
-  satuan:             BookOpen,
-  konversi_satuan:    Network,
+  profile:            User,
   members:            IdCard,
   member:             CreditCard,
-  profile:            User,
   users:              UserCog,
+  // ── Master Data ─────────────────────────────────────
+  produk:             Package,
+  kategori_produk:    Layers,
+  supplier:           Truck,
+  kategori_supplier:  Building,
+  pelanggan:          Users,
+  satuan:             BookOpen,
+  konversi_satuan:   ArrowLeftRight,
+  // ── Transaksi ───────────────────────────────────────
   pembelian:          ShoppingBag,
-  retur_pembelian:    RotateCcw,
+  retur_pembelian:    TrendingDown,
   penjualan:          ShoppingCart,
-  retur_penjualan:    RotateCcw,
+  retur_penjualan:   TrendingUp,
   pos:                Receipt,
-  first_stock:        Package,
-  pengurangan_stok:   Package,
-  stock_opname:       Boxes,
+  first_stock:        ShoppingBasket,
+  pengurangan_stok:   MinusCircle,
+  stock_opname:       ClipboardSignature,
+  first_stocks:       ShoppingBasket,
+  stock_reductions:   MinusCircle,
+  stock_opnames:      ClipboardSignature,
   pengeluaran:        Wallet,
-  pemasukan_lain:     Banknote,
-  jurnal_umum:         BookOpen,
-  buku_besar:          BarChart3,
-  neraca_saldo:        Columns,
-  laporan_bulanan:     Calendar,
-  laporan_aset:        Building2,
-  defecta:             AlertTriangle,
-  kopi_resep:          ClipboardList,
-  laba_rugi:           BarChart3,
-  'stok minimum':      Package,
-  'stok maksimal':     Package,
-  'stock opname':      Boxes,
-  'laba rugi':         BarChart3,
-  'laporan pembelian': ShoppingBag,
-  'laporan penjualan': ShoppingCart,
+  pemasukan_lain:     PlusSquare,
+  // ── Finance ─────────────────────────────────────────
+  jurnal_umum:        BookOpen,
+  buku_besar:         BarChart3,
+  neraca_saldo:       Columns,
+  'laba rugi':        BarChart3,
+  // ── Laporan ─────────────────────────────────────────
+  'stok minimum':     Package,
+  'stok maksimal':    Maximize2,
+  'stock opname':     ClipboardSignature,
+  'laba rugi':        BarChart3,
+  'laporan bulanan':  Calendar,
+  'laporan aset':     Building2,
+  defecta:            AlertTriangle,
+  'kopi resep':       FileText,
+  'laporan_pembelian':   ShoppingBag,
+  'laporan_penjualan':   ShoppingCart,
+  // ── Membership ───────────────────────────────────────
+  'kategori member':  Layers,
+  kategori_member:    Layers,
+  // ── Laporan extras ───────────────────────────────────
+  'laporan bulanan':  Calendar,
+  'laporan aset':    Building2,
+  laporan_bulanan:   Calendar,
+  laporan_aset:      FileUp,
+  // ── Edge-case keys (for safety) ─────────────────────
+  'stok awal':        ClipboardCheck,
+  'pendapatan lain':  PlusSquare,
+  'retur penjualan':   TrendingUp,
+  'retur pembelian':  TrendingDown,
+  // ── Finance extras ─────────────────────────────────
+  'stok opname':      ClipboardSignature,
+  'mutasi stok':      ArrowLeftRight,
+  'pergerakan barang': TrendingUp,
+  defecta:            AlertTriangle,
+  // ── Finance routes (underscore key) ─────────────────
+  stok_awal:         ClipboardCheck,
+  stok_opname:       ClipboardSignature,
+  mutasi_stok:       ArrowLeftRight,
+  pergerakan_barang: TrendingUp,
 };
 
 /**
