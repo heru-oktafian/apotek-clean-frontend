@@ -293,7 +293,7 @@ function transformMenuRolesToNavGroups(roles: MenuApiResponse['data']): NavGroup
     for (const item of role.details) {
       if (!item?.group_menu || !item?.title) continue;
 
-      const groupKey = item.group_menu.toLowerCase();
+      const groupKey = normalizeGroupKey(item.group_menu);
       const itemLabel = item.title;
       const itemKey = itemLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
       const itemTo = deriveRoute(groupKey, itemLabel);
@@ -324,6 +324,20 @@ function transformMenuRolesToNavGroups(roles: MenuApiResponse['data']): NavGroup
     };
     return (order[a.id] ?? 99) - (order[b.id] ?? 99);
   });
+}
+
+/** Normalize raw group_menu string → canonical key */
+function normalizeGroupKey(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s === 'master')          return 'masters';
+  if (s === 'user manage')     return 'user_manage';
+  if (s === 'user-manage')     return 'user_manage';
+  if (s === 'usermanage')      return 'user_manage';
+  if (s === 'user_manage')     return 'user_manage';
+  if (s === 'user_manage2')    return 'user_manage';
+  if (s === 'report' || s === 'reports') return 'laporan';
+  if (s === 'report')          return 'laporan';
+  return s;
 }
 
 /** Format group_menu string → nice label */
