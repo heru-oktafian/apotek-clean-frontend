@@ -1058,3 +1058,67 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Status**: ✅ Complete
 **Next Phase**: Testing & User Acceptance
 
+
+---
+
+### 14. Update Sidebar Icons — Contextually Appropriate Icons
+**Tanggal**: 2026-07-19
+**File Utama**:
+- `src/components/layout/app-sidebar.tsx`
+- `src/features/menu/hooks/useMenu.ts`
+
+**Commit**: `babc86b` — "fix: update sidebar icons to be more descriptive and contextually appropriate"
+
+**Perubahan**:
+
+1. **Group Icons (Header Menu)**:
+   - `Master`: `Boxes` → `Database` (database cylinder — paling cocok untuk master data)
+   - `Laporan`: `ClipboardList` → `BarChart3` (chart — mencerminkan laporan/analytics)
+   - `Membership`: `Tags` → `Users` (user group — mencerminkan membership)
+   - `User Manage`: `UserCog` → `Shield` (shield — access control/security)
+   - `Settings`: `Settings` → `Settings2` (gear dengan titik — versi lebih clean)
+
+2. **GROUP_ORDER**:
+   - Reorder: Dashboard → Master → Transaksi → Finance → Membership → Laporan → UserManage → Settings
+
+3. **Item Icons — Finance Group**:
+   - `Stok Awal`: `Package` → `ClipboardCheck` (clipboard with checkmark)
+   - `Stok Opname`: `Boxes` → `ClipboardSignature` (clipboard with pen — stock opname)
+   - `Mutasi Stok`: `Network` → `ArrowLeftRight` (two-way arrows)
+   - `Pergerakan Barang`: fallback → `TrendingUp` (trending arrow)
+   - `Defecta`: `AlertTriangle` ✅ (warning triangle — sudah sesuai)
+
+4. **Item Icons — Laporan Group**:
+   - `Laporan Bulanan`: fallback → `Calendar`
+   - `Laporan Aset`: `Building2` → `FileUp` (upload file — laporan aset)
+
+5. **Item Icons — Membership Group**:
+   - `Kategori Member`: `Tags` → `Layers` (stacked layers — kategori)
+
+6. **Item Icons — Transaksi Group**:
+   - `Retur Pembelian`: `RotateCcw` → `TrendingDown` (down arrow — retur masuk)
+   - `Retur Penjualan`: `RotateCcw` → `TrendingUp` (up arrow — retur keluar)
+   - `First Stock`: `Package` → `ShoppingBasket` (basket — stok awal barang masuk)
+   - `Pengurangan Stok`: `Package` → `MinusCircle` (minus circle — pengurangan)
+   - `Stock Opname`: `Boxes` → `ClipboardSignature`
+
+7. **Item Icons — Master Group**:
+   - `Kategori Supplier`: `Tags` → `Building` (building — kategori supplier)
+   - `Konversi Satuan`: `Network` → `ArrowLeftRight` (conversion = exchange)
+   - `Pelanggan`: `User` → `Users` (plural — daftar pelanggan)
+
+8. **Icons Baru yang Di-import**:
+   - `Database`, `Settings2`, `Shield`, `ArrowLeftRight`, `ShoppingBasket`, `MinusCircle`, `ClipboardSignature`, `Layers`, `TrendingDown`, `TrendingUp`, `Maximize2`, `Building`, `FileUp`
+
+9. **Sinkronisasi**:
+   - `ITEM_ICON_MAP` di `app-sidebar.tsx` dan `useMenu.ts` sekarang konsisten
+   - Tambahkan edge-case keys (underscore + space) untuk safety mapping
+   - Tambahkan finance extras: `stok_awal`, `stok_opname`, `mutasi_stok`, `pergerakan_barang`
+
+**Dampak**:
+- Setiap icon sekarang mencerminkan makna menu yang sebenarnya
+- Inkonsistensi antara `app-sidebar.tsx` dan `useMenu.ts` teratasi
+- Edge-case keys mencegah fallback ke `Settings` gear untuk menu yang tidak ter-mapping
+
+**Last Updated**: 2026-07-19 - Sidebar Icons Updated
+**Status**: ✅ Complete
