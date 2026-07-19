@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Modal } from '../ui';
 
 interface ConfirmDialogProps {
@@ -5,7 +6,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title?: string;
-  message: string;
+  message: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'primary';
