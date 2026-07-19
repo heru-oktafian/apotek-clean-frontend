@@ -359,7 +359,7 @@ export function UnitConversionsPage() {
             <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
             <Button
               type="submit"
-              variant={editingConversion ? 'outline' : 'primary'}
+              variant={editingConversion ? 'edit' : 'primary'}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Menyimpan...' : editingConversion ? 'Simpan' : 'Tambahkan'}

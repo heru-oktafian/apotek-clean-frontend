@@ -369,7 +369,7 @@ export function MembersPage() {
             <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
             <Button
               type="submit"
-              variant={editingMember ? 'outline' : 'primary'}
+              variant={editingMember ? 'edit' : 'primary'}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Menyimpan...' : editingMember ? 'Simpan' : 'Tambahkan'}

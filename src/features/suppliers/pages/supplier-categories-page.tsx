@@ -281,7 +281,7 @@ export function SupplierCategoriesPage() {
             <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
             <Button
               type="submit"
-              variant={editingCategory ? 'outline' : 'primary'}
+              variant={editingCategory ? 'edit' : 'primary'}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Menyimpan...' : editingCategory ? 'Simpan' : 'Tambahkan'}

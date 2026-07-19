@@ -352,7 +352,7 @@ export function SuppliersPage() {
             <Button type="button" variant="outline" onClick={closeEdit}>Batal</Button>
             <Button
               type="submit"
-              variant={editingSupplier ? 'outline' : 'primary'}
+              variant={editingSupplier ? 'edit' : 'primary'}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Menyimpan...' : editingSupplier ? 'Simpan' : 'Tambahkan'}
