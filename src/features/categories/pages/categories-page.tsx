@@ -185,8 +185,10 @@ export function CategoriesPage() {
       width: '60px',
       render: (row) => (row._index ?? 0) + 1 + (currentPage - 1) * perPage,
     },
-    { key: 'id', header: 'ID', align: 'center', width: '80px' },
-    { key: 'nama', header: 'Nama Kategori' },
+    { 
+      key: 'nama', 
+      header: 'Nama Kategori' 
+    },
     {
       key: 'actions',
       header: 'Aksi',
