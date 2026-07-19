@@ -2,6 +2,33 @@ import { apiRequest } from '../../../lib/api/client';
 import { buildApiUrl } from '../../../lib/api/env';
 import type { ProductCategory, Product, Unit, ComboResponse, ProductsListResponse } from '../types/products';
 
+export interface ProductDetail extends Product {
+  unit_id: string;
+  product_category_id: number;
+}
+
+export interface ProductDetailResponse {
+  status: string;
+  message: string;
+  data: ProductDetail[];
+}
+
+/**
+ * Fetch product detail by ID — returns both FK IDs and names
+ * Used for: edit form population (needs unit_id & product_category_id)
+ */
+export async function fetchProductById(token: string, id: string): Promise<ProductDetail> {
+  const response = await apiRequest<ProductDetailResponse>(
+    `/api/products?id=${encodeURIComponent(id)}`,
+    { token }
+  );
+  const data = (response as ProductDetailResponse).data;
+  if (!data || data.length === 0) {
+    throw new Error('Produk tidak ditemukan');
+  }
+  return data[0];
+}
+
 /**
  * Fetch product categories combo for dropdown
  */
