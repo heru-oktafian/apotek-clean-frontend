@@ -531,8 +531,9 @@ export function ProductsPage() {
           <>
             <Button type="button" variant="outline" onClick={closeEditProduct} disabled={isSubmitting}>Batal</Button>
             <Button
-              type="submit"
+              type="button"
               disabled={isSubmitting}
+              onClick={() => { void handleProductFormSubmit({ preventDefault: () => {} } as unknown as React.FormEvent); }}
               className={
                 editingProduct
                   ? 'bg-amber-500 hover:bg-amber-600 text-slate-900'
