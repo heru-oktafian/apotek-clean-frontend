@@ -245,31 +245,7 @@ const ITEM_ICON_MAP: Record<string, LucideIcon> = {
   'stok minimum':     Package,
   'stok maksimal':    Maximize2,
   'stock opname':     ClipboardSignature,
-  'laba rugi':        BarChart3,
   'laporan bulanan':  Calendar,
-  'laporan aset':     Building2,
-  defecta:            AlertTriangle,
-  'kopi resep':       FileText,
-  'laporan_pembelian':   ShoppingBag,
-  'laporan_penjualan':   ShoppingCart,
-  // ── Membership ───────────────────────────────────────
-  'kategori member':  Layers,
-  kategori_member:    Layers,
-  // ── Laporan extras ───────────────────────────────────
-  'laporan bulanan':  Calendar,
-  'laporan aset':    Building2,
-  laporan_bulanan:   Calendar,
-  laporan_aset:      FileUp,
-  // ── Edge-case keys (for safety) ─────────────────────
-  'stok awal':        ClipboardCheck,
-  'pendapatan lain':  PlusSquare,
-  'retur penjualan':   TrendingUp,
-  'retur pembelian':  TrendingDown,
-  // ── Finance extras ─────────────────────────────────
-  'stok opname':      ClipboardSignature,
-  'mutasi stok':      ArrowLeftRight,
-  'pergerakan barang': TrendingUp,
-  defecta:            AlertTriangle,
   // ── Finance routes (underscore key) ─────────────────
   stok_awal:         ClipboardCheck,
   stok_opname:       ClipboardSignature,
