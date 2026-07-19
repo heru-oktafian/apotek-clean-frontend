@@ -80,8 +80,19 @@ export interface CreateProductPayload {
   product_category_id: number;
 }
 
-export interface UpdateProductPayload extends CreateProductPayload {}
+/**
+ * Parse frontend form date string → Go-compatible RFC3339 datetime string.
+ * Backend uses GORM which parses time.Time from RFC3339 / RFC822.
+ */
+function toBackendDate(frontendDate: string): string {
+  if (!frontendDate) return new Date().toISOString();
+  // Parse as noon UTC to avoid timezone shift issues
+  return new Date(`${frontendDate}T12:00:00Z`).toISOString();
+}
 
+/**
+ * Send createProduct with int-converted fields and Go-compatible date.
+ */
 export async function createProduct(
   token: string,
   body: CreateProductPayload
@@ -89,21 +100,40 @@ export async function createProduct(
   return apiRequest<Product>('/api/products', {
     token,
     method: 'POST',
-    body,
+    body: {
+      ...body,
+      purchase_price: Math.round(body.purchase_price),
+      sales_price: Math.round(body.sales_price),
+      alternate_price: Math.round(body.alternate_price),
+      product_category_id: Math.round(body.product_category_id),
+      expired_date: toBackendDate(body.expired_date),
+    },
   });
 }
 
+/**
+ * Send updateProduct with int-converted fields and Go-compatible date.
+ */
 export async function updateProduct(
   token: string,
   id: string,
-  body: UpdateProductPayload
+  body: CreateProductPayload
 ) {
   return apiRequest<Product>(`/api/products/${id}`, {
     token,
     method: 'PUT',
-    body,
+    body: {
+      ...body,
+      purchase_price: Math.round(body.purchase_price),
+      sales_price: Math.round(body.sales_price),
+      alternate_price: Math.round(body.alternate_price),
+      product_category_id: Math.round(body.product_category_id),
+      expired_date: toBackendDate(body.expired_date),
+    },
   });
 }
+
+export interface UpdateProductPayload extends CreateProductPayload {}
 
 /**
  * Download product label as PDF
