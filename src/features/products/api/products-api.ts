@@ -16,10 +16,11 @@ export interface ProductDetailResponse {
 /**
  * Fetch product detail by ID — returns both FK IDs and names
  * Used for: edit form population (needs unit_id & product_category_id)
+ * Endpoint: GET /api/products/:id (URL param, not query param)
  */
 export async function fetchProductById(token: string, id: string): Promise<ProductDetail> {
   const response = await apiRequest<ProductDetailResponse>(
-    `/api/products?id=${encodeURIComponent(id)}`,
+    `/api/products/${encodeURIComponent(id)}`,
     { token }
   );
   const data = (response as ProductDetailResponse).data;
