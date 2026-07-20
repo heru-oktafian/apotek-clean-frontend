@@ -57,6 +57,7 @@ export function ProductsPage() {
   const [isFetchingDetail, setIsFetchingDetail] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
@@ -179,6 +180,7 @@ export function ProductsPage() {
       return;
     }
     setEditingProduct(product);
+    setIsEditMode(true);
     setIsFetchingDetail(true);
     try {
       const detail = await fetchProductById(activeToken, product.id);
@@ -201,6 +203,7 @@ export function ProductsPage() {
       console.error('Gagal mengambil detail produk:', error);
       toast.error('Gagal mengambil data produk untuk diedit.');
       setEditingProduct(null);
+      setIsEditMode(false);
       return;
     } finally {
       setIsFetchingDetail(false);
@@ -211,6 +214,7 @@ export function ProductsPage() {
 
   const closeEditProduct = () => {
     setEditingProduct(null);
+    setIsEditMode(false);
     setIsEditOpen(false);
     resetForm();
   };
@@ -535,12 +539,12 @@ export function ProductsPage() {
               disabled={isSubmitting}
               onClick={() => { void handleProductFormSubmit({ preventDefault: () => {} } as unknown as React.FormEvent); }}
               className={
-                editingProduct
+                isEditMode
                   ? 'bg-amber-500 hover:bg-amber-600 text-slate-900'
                   : 'bg-green-600 hover:bg-green-700 text-white'
               }
             >
-              {isSubmitting ? 'Menyimpan...' : (editingProduct ? 'Simpan' : 'Tambahkan')}
+              {isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan' : 'Tambahkan')}
             </Button>
           </>
         }
