@@ -1283,3 +1283,18 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Dampak**: Submit button sekarang berfungsi normal. Button warna amber (edit) / hijau (add) tetap dipertahankan.
 
 **Status**: ✅ Fixed
+
+---
+
+### 20. Fix Lagi: isEditMode Explicit State untuk Amber Button
+**Tanggal**: 2026-07-20
+**File**: `src/features/products/pages/products-page.tsx`
+**Commit**: `15edc22`
+
+**Bug**: Button "Simpan" di modal edit masih hijau padahal `editingProduct` ternary sudah benar di kode.
+
+**Root Cause**: Pixel analysis (ImageMagick) confirm button hijau `#0DAB48` (green-600) saat modal edit terbuka. Kondisi `editingProduct` ternary sudah benar, tapi React rendering masih pilih branch hijau. Kemungkinan: state batching atau timing issue antara `setEditingProduct()` dan render FormModal.
+
+**Fix**: Dedicated boolean `isEditMode` state — di-set SYNCHRONOUSLY di awal `openEditProduct()` (sebelum async fetch), di-clear di `closeEditProduct()` dan catch block. State ini murni untuk UI, tidak affect API call (`editingProduct.id` tetap drive update vs create).
+
+**Status**: ✅ Fixed
