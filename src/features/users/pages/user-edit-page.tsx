@@ -18,7 +18,7 @@
  * @see useAuth - context untuk auth token
  */
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/auth-context'
 import { useToast, Table, Button, type TableColumn } from '../../../components/ui'

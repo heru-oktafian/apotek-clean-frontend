@@ -13,7 +13,7 @@
  * @see UsersPage - halaman daftar user
  */
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { useAuth } from '../../auth/auth-context'
 import { useToast, Input, Select, Button } from '../../../components/ui'
 import { fetchUserById, updateUser } from '../api/users-api'

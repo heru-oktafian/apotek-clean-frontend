@@ -1,6 +1,6 @@
 import { LogOut, User } from 'lucide-react'
 import { useAuth } from '../../features/auth/auth-context'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Dashboard Header dengan Breadcrumb Dinamis

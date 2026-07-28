@@ -21,7 +21,7 @@
  * @see useAuth - context untuk simpan token dan profile
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { getProfile, listBranches, login, normalizeBranch, setBranch } from '../api'
 import { useAuth } from '../auth-context'
 

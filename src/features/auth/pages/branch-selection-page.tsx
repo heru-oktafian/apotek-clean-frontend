@@ -17,7 +17,7 @@
  * @see useAuth - context untuk simpan token dan branch
  */
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { getProfile, listBranches, normalizeBranch, setBranch } from '../api'
 import { useAuth } from '../auth-context'
 import type { BranchOption } from '../../../types/api'

@@ -16,7 +16,7 @@
  * @see UserEditPage - halaman detail/edit user
  * @see useUsers - hook untuk mengambil data user
  */
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Edit2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../auth/auth-context';
 import { useUsers } from '../hooks/useUsers';

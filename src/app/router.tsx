@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router'
 import { AppSidebar } from '../components/layout/app-sidebar'
 import { DashboardTopbar } from '../components/layout/dashboard-topbar'
 import { MobileBottomBar } from '../components/layout/mobile-bottom-bar'
