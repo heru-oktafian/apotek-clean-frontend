@@ -1374,3 +1374,137 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 
 **Status**: ✅ Complete
 **Next Phase**: Testing & User Acceptance
+
+---
+
+### 16. Fitur Sales - List Page, API Layer & Custom Hooks
+**Tanggal**: 2026-08-22
+**Commit**: `fd40257`
+**File Utama**:
+- `src/features/sales/types/sales.ts` (new)
+- `src/features/sales/api/sales-api.ts` (new)
+- `src/features/sales/hooks/useSales.ts` (new)
+- `src/features/sales/pages/sales-page.tsx` (new)
+- `src/app/router.tsx` (updated)
+
+**Perubahan & Perbaikan**:
+
+1. **New Files Created** (4 files):
+   - `src/features/sales/types/sales.ts` — Type definitions lengkap
+   - `src/features/sales/api/sales-api.ts` — 15 API functions
+   - `src/features/sales/hooks/useSales.ts` — 4 custom hooks
+   - `src/features/sales/pages/sales-page.tsx` — UI halaman list (~310 lines)
+
+2. **Type Definitions** (`sales.ts`):
+   - `SalesProductComboItem` — Product combobox (product_id, name, price, stock, showcase_stock, unit_name)
+   - `SalesMemberComboItem` — Member combobox (member_id, member_name)
+   - `SaleListItem` — Item di list penjualan
+   - `SaleItem` — Item dalam transaksi penjualan
+   - `SaleDetailPrint` — Detail lengkap untuk print
+   - `SaleCreateResponse`, `SaleUpdateResponse`, `SaleDeleteResponse` — Response types
+   - `PAYMENT_OPTIONS` — Konstanta: Tunai (`paid_by_cash`) / Kredit (`paid_by_credit`)
+   - Payload types: `CreateSalePayload`, `UpdateSalePayload`, `AddSaleItemPayload`, `UpdateSaleItemPayload`
+
+3. **API Endpoints** (`sales-api.ts` — 15 functions):
+   - `fetchSalesProductsCombo(token, search)` — GET `/api/sales-products-combo`
+   - `fetchSalesMembersCombo(token, search)` — GET `/api/members-combo`
+   - `fetchSalesList(token, {page, search, month})` — GET `/api/sales-details`
+   - `createSale(token, payload)` — POST `/api/sales`
+   - `updateSale(token, saleId, payload)` — PUT `/api/sales/{id}`
+   - `deleteSale(token, saleId)` — DELETE `/api/sales/{id}`
+   - `fetchSaleItems(token, saleId)` — GET `/api/sale-items/all/{sale_id}`
+   - `addSaleItem(token, payload)` — POST `/api/sale-items`
+   - `updateSaleItem(token, itemId, payload)` — PUT `/api/sale-items/{id}`
+   - `deleteSaleItem(token, itemId)` — DELETE `/api/sale-items/{id}`
+   - `fetchSaleDetail(token, saleId)` — GET `/api/sales/{id}` (for print)
+   - `getSalesPdfUrl(token, month)` — GET `/api/sales/pdf`
+   - `getSalesExcelUrl(token, month)` — GET `/api/sales/excel`
+   - `getSaleItemsPdfUrl(token, saleId)` — GET `/api/sale-items/pdf`
+   - `getSaleItemsExcelUrl(token, saleId)` — GET `/api/sale-items/excel`
+
+4. **Custom Hooks** (`useSales.ts`):
+   - `useSalesList()` — List state: sales[], totalItems, page, isLoading, error + `loadSales()` + `deleteSaleById()`
+   - `useSaleDetail(saleId)` — Single sale + items + `loadSaleDetail()` + `updateSaleData()` + `removeSaleItem()`
+   - `useSaleItems(saleId)` — Items CRUD + `loadItems()` + `addItem()` + `editItem()` + `removeItem()`
+   - `useCreateSale()` — Async create dengan `create(payload)` → `{saleId, error}`
+
+5. **UI Sales Page** (List View):
+   - **Filter bulan**: `<input type="month">`, default bulan ini
+   - **Search bar**: pakai `ListSearchBar` component
+   - **Toolbar**: pakai `ActionToolbar` — tombol Tambah, Export Excel, Export PDF
+   - **Table**: 6 kolom — No, ID Transaksi, Deskripsi, Pembayaran (badge Tunai/Kredit), Total (format currency), Aksi (Printer icon)
+   - **Print**: `window.open()` ke `/api/sales/{id}` di tab baru
+   - **Pagination**: pakai `Pagination` component
+   - **Reusable components**: `ListSearchBar`, `ActionToolbar`, `ActionCell`, `Table`, `Pagination`, `toast`, `formatNumber`
+
+6. **Router Update**:
+   - Import `SalesPage`
+   - Route: `/transactions/sales` → `<SalesPage />`
+
+**Yang Sudah Selesai**:
+- ✅ Feature folder structure (types, api, hooks, pages)
+- ✅ 15 API functions wired
+- ✅ 4 custom hooks implemented
+- ✅ Sales list page dengan search, filter bulan, pagination
+- ✅ Export Excel & PDF per bulan
+- ✅ Print / Cetak strruk
+
+**Yang Belum (⏳ Next Phase)**:
+- ⏳ Modal Tambah Penjualan — keranjang belanja (pilih produk → qty → add → simpan)
+- ⏳ Modal Detail Penjualan — view item-item
+- ⏳ Edit item per baris
+- ⏳ Hapus item
+- ⏳ Konfirmasi hapus penjualan
+
+**Status**: ✅ Phase 1 — List Page, API Layer & Hooks Complete
+**Next Phase**: Modal Create / Detail / Delete
+
+---
+
+### 17. Daily Assets Feature — List Page, API Layer & Custom Hooks
+**Tanggal**: 2026-08-24
+**Commit**: `fd40257`
+**File Utama**:
+- `src/features/daily-assets/types/daily-assets.ts` (new)
+- `src/features/daily-assets/api/daily-assets-api.ts` (new)
+- `src/features/daily-assets/hooks/useDailyAssets.ts` (new)
+- `src/features/daily-assets/pages/daily-assets-page.tsx` (new)
+- `src/app/router.tsx` (updated)
+
+**Perubahan & Perbaikan**:
+
+1. **New Files Created** (4 files):
+   - `src/features/daily-assets/types/daily-assets.ts` — Type definitions
+   - `src/features/daily-assets/api/daily-assets-api.ts` — API layer
+   - `src/features/daily-assets/hooks/useDailyAssets.ts` — Custom hook
+   - `src/features/daily-assets/pages/daily-assets-page.tsx` — UI halaman
+
+2. **Type Definitions** (`daily-assets.ts`):
+   - Type definitions untuk daily assets feature (produk, aset, dll)
+   - Response types dan form data types
+
+3. **API Layer** (`daily-assets-api.ts`):
+   - Endpoint untuk fetch list daily assets
+   - CRUD operations (Create, Read, Update, Delete)
+   - Combo/product endpoints
+
+4. **Custom Hook** (`useDailyAssets.ts`):
+   - State management: assets[], totalItems, page, isLoading, error
+   - `loadAssets()` — Fetch dengan pagination & search
+   - `createAsset()` — Tambah aset baru
+   - `updateAsset()` — Update aset
+   - `deleteAsset()` — Hapus aset
+
+5. **UI Daily Assets Page**:
+   - List page dengan search & pagination
+   - Toolbar dengan aksi utama (Tambah, Export)
+   - Table dengan kolom data aset
+   - Modal untuk Add/Edit/Delete
+   - Pakai reusable components: `ListSearchBar`, `ActionToolbar`, `ActionCell`, `Table`, `Pagination`
+
+6. **Router Update**:
+   - Import `DailyAssetsPage`
+   - Route baru: `/transactions/daily-assets` → `<DailyAssetsPage />`
+
+**Status**: ✅ Phase 1 — List Page, API Layer & Hooks Complete
+**Next Phase**: UI Enhancement & Testing
