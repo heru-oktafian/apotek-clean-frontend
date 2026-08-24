@@ -1,5 +1,7 @@
 import { Plus, Download } from 'lucide-react';
 
+import type { ReactNode } from 'react';
+
 interface ActionToolbarProps {
   addLabel: string;
   onAddClick: () => void;
@@ -8,6 +10,7 @@ interface ActionToolbarProps {
   onExportExcel?: () => void;
   onExportPdf?: () => void;
   isLoading?: boolean;
+  customRightSlot?: ReactNode;
 }
 
 export function ActionToolbar({
@@ -18,6 +21,7 @@ export function ActionToolbar({
   onExportExcel,
   onExportPdf,
   isLoading = false,
+  customRightSlot,
 }: ActionToolbarProps) {
   return (
     <div className="list-page__toolbar">
@@ -34,6 +38,7 @@ export function ActionToolbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-3">
+        {customRightSlot}
         {showExportExcel && (
           <button
             type="button"

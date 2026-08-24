@@ -43,7 +43,7 @@ export function Table<T = unknown>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="bg-white">
           {data.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-400">
@@ -52,7 +52,7 @@ export function Table<T = unknown>({
             </tr>
           ) : (
             data.map((row, i) => (
-              <tr key={i} className="hover:bg-slate-50 transition-colors">
+              <tr key={i} className="border-b border-slate-200 hover:bg-slate-50 transition-colors">
                 {columns.map((col) => (
                   <td
                     key={col.key}

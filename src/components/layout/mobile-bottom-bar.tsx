@@ -30,7 +30,6 @@ import { ITEM_ICON_MAP, GROUP_ICON_MAP } from './app-sidebar';
 
 const QUICK_TABS = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-  { label: 'Penjualan', to: '/sale-pos', icon: ShoppingCart },
   { label: 'Retur Jual', to: '/retur-penjualan', icon: RotateCcw },
 ];
 

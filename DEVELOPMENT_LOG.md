@@ -1298,3 +1298,79 @@ Setelah data menu dari API dikelompokkan, lakukan post-processing:
 **Fix**: Dedicated boolean `isEditMode` state — di-set SYNCHRONOUSLY di awal `openEditProduct()` (sebelum async fetch), di-clear di `closeEditProduct()` dan catch block. State ini murni untuk UI, tidak affect API call (`editingProduct.id` tetap drive update vs create).
 
 **Status**: ✅ Fixed
+
+---
+
+### 16. Fitur Sales - Complete Implementation
+**Tanggal**: 2026-08-22
+**File Utama**:
+- `src/features/sales/types/sales.ts` (new)
+- `src/features/sales/api/sales-api.ts` (new)
+- `src/features/sales/hooks/useSales.ts` (new)
+- `src/features/sales/pages/sales-page.tsx` (new)
+- `src/app/router.tsx` (updated)
+
+**Perubahan & Perbaikan**:
+
+1. **New Files Created**:
+   - `src/features/sales/types/sales.ts` — Type definitions lengkap untuk Sales feature
+   - `src/features/sales/api/sales-api.ts` — API layer dengan semua endpoint sales
+   - `src/features/sales/hooks/useSales.ts` — Custom hooks untuk state management
+   - `src/features/sales/pages/sales-page.tsx` — Full UI component (~800 lines)
+
+2. **Type Definitions**:
+   - `SalesProductComboItem` — Product untuk combobox (id, name, price, stock, unit_name)
+   - `SalesMemberComboItem` — Member untuk combobox (id, name)
+   - `SaleListItem` — Item di list penjualan
+   - `SaleItem` — Item dalam transaksi penjualan
+   - `SaleDetailPrint` — Detail lengkap untuk print/cetak
+   - Payload types untuk Create, Update, Delete
+
+3. **API Endpoints** (15 endpoints):
+   - `GET /api/sales-products-combo?search=` — Combobox produk
+   - `GET /api/members-combo?search=` — Combobox member
+   - `GET /api/sales-details?page=&search=&month=` — List penjualan
+   - `POST /api/sales` — Create sale
+   - `PUT /api/sales/{id}` — Update sale
+   - `DELETE /api/sales/{id}` — Delete sale
+   - `GET /api/sale-items/all/{sale_id}` — View sale items
+   - `POST /api/sale-items` — Add item
+   - `PUT /api/sale-items/{id}` — Update item
+   - `DELETE /api/sale-items/{id}` — Delete item
+   - `GET /api/sales/{id}` — Get sale detail (print)
+   - `GET /api/sales/pdf?month=` — Download PDF report
+   - `GET /api/sales/excel?month=` — Download Excel report
+   - `GET /api/sale-items/pdf?sale_id=` — Download PDF items
+   - `GET /api/sale-items/excel?sale_id=` — Download Excel items
+
+4. **Custom Hooks**:
+   - `useSalesList()` — Manage sales list state dengan pagination
+   - `useSaleDetail(saleId)` — Manage single sale detail
+   - `useSaleItems(saleId)` — Manage sale items CRUD
+   - `useCreateSale()` — Handle create sale transaction
+
+5. **UI Components**:
+   - **Main Sales Page**: List penjualan dengan search, filter bulan, pagination
+   - **CreateSaleModal**: Form transaksi baru dengan keranjang belanja
+   - **SaleDetailModal**: View/edit/delete sale dengan detail items
+
+6. **Router Update**:
+   - Import SalesPage
+   - Route: `/transactions/sales` → `<SalesPage />`
+
+7. **CSS Updates**:
+   - ~300 lines `.sales-page__*` classes
+   - Modal styles, cart styles, dropdown styles
+   - Responsive design dengan media query 768px
+
+**Key Features**:
+- ✅ List penjualan dengan pagination & filter bulan
+- ✅ Search transaksi
+- ✅ Create transaksi baru dengan keranjang
+- ✅ View/edit/delete detail penjualan
+- ✅ Cetak transaksi
+- ✅ Download PDF & Excel report
+- ✅ Download PDF & Excel per transaksi
+
+**Status**: ✅ Complete
+**Next Phase**: Testing & User Acceptance

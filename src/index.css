@@ -1451,6 +1451,51 @@ code {
 .text-secondary { color: var(--text-muted) !important; }
 .text-link { color: var(--accent) !important; text-decoration: none; }
 .text-link:hover { text-decoration: underline; }
+
+/* Fix: remove underline/line from buttons in tables */
+.table-actions button,
+.table-actions a,
+td button,
+td a {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.table-actions button::after,
+td button::after,
+.table-actions button::before,
+td button::before {
+  display: none !important;
+}
+
+/* Remove any underline from Lucide icons */
+.table-actions svg,
+td svg {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  fill: none !important;
+  stroke-linejoin: round;
+  stroke-width: 2px;
+}
+
+/* Force remove any bottom lines in table cells */
+td * {
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+/* Override for table action buttons */
+table button {
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+}
+
+table button svg {
+  border-bottom: none !important;
+  text-decoration: none !important;
+}
 .text-danger { color: #dc2626 !important; }
 
 /* ── Responsive ──────────────────────────────────────────── */
@@ -4402,4 +4447,458 @@ code {
 .placeholder-box span {
   font-size: 0.8rem;
   color: #64748b;
+}
+
+/* ── Sales Page ────────────────────────────────────────────── */
+.sales-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+}
+
+.sales-page .page-header {
+  margin-bottom: 1.5rem;
+}
+
+.sales-page .page-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Toolbar */
+.sales-page .toolbar-section {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sales-page .search-box {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.sales-page .search-box .input {
+  flex: 1;
+}
+
+.sales-page .month-input {
+  width: 160px;
+}
+
+/* Download buttons */
+.sales-page .download-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Data section */
+.sales-page .data-section {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* ID cell - smaller font */
+.sales-page .id-cell {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-family: monospace;
+}
+
+/* Description cell */
+.sales-page .desc-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Amount cell */
+.sales-page .amount-cell {
+  font-weight: 600;
+  color: var(--accent);
+  text-align: right;
+}
+
+/* Actions cell */
+.sales-page .actions-cell {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+/* Badge variants */
+.sales-page .badge-success {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sales-page .badge-warning {
+  background: #fef3c7;
+  color: #d97706;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Empty state */
+.sales-page .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+/* Pagination */
+.sales-page .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sales-page .pagination-info {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* ── Modal Styles ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.modal-header h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+/* Sale Detail Modal */
+.sales-detail-modal {
+  max-width: 700px;
+}
+
+.sale-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  font-size: 0.9rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.info-item .total-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.items-section {
+  margin-bottom: 1.5rem;
+}
+
+.items-section h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: #0f172a;
+}
+
+/* Create Sale Modal */
+.sales-create-modal {
+  max-width: 800px;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group.flex-1 {
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Product Search */
+.product-search-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.product-search-section label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.product-search-wrapper {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item .product-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.dropdown-item .product-price {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.dropdown-item .product-stock {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Cart Section */
+.cart-section {
+  margin-bottom: 1rem;
+}
+
+.cart-section h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.empty-cart {
+  text-align: center;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.cart-table {
+  font-size: 0.875rem;
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-control button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #374151;
+}
+
+.qty-control button:hover {
+  background: #f1f5f9;
+}
+
+/* Cart Summary */
+.cart-summary {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row span:first-child {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.total-amount {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: var(--accent) !important;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Confirm Modal */
+.confirm-modal {
+  max-width: 400px;
+  padding: 1.5rem;
+}
+
+.confirm-modal h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+}
+
+.confirm-modal p {
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Loading state */
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sales-page {
+    padding: 1rem;
+  }
+  
+  .sales-page .toolbar-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sales-page .search-box {
+    max-width: none;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons .btn {
+    width: 100%;
+  }
 }
